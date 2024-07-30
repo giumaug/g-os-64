@@ -1,0 +1,161 @@
+Intestazione ELF:
+  Magic:   7f 45 4c 46 01 01 01 00 00 00 00 00 00 00 00 00 
+  Classe:                            ELF32
+  Dati:                              complemento a 2, little endian
+  Version:                           1 (current)
+  SO/ABI:                            UNIX - System V
+  Versione ABI:                      0
+  Tipo:                              EXEC (file eseguibile)
+  Macchina:                          Intel 80386
+  Versione:                          0x1
+  Indirizzo punto d'ingresso:        0x100000
+  Inizio intestazioni di programma   52 (byte nel file)
+  Inizio intestazioni di sezione:    29596 (byte nel file)
+  Flag:                              0x0
+  Size of this header:               52 (bytes)
+  Size of program headers:           32 (bytes)
+  Number of program headers:         4
+  Size of section headers:           40 (bytes)
+  Number of section headers:         17
+  Section header string table index: 16
+
+Intestazioni di sezione:
+  [N°] Nome              Tipo            Indir    Off    Dimen  ES Flg Lk Inf Al
+  [ 0]                   NULL            00000000 000000 000000 00      0   0  0
+  [ 1] .text             PROGBITS        00100000 001000 0014ec 00  AX  0   0  1
+  [ 2] .rodata           PROGBITS        001014ec 0024ec 000075 00   A  0   0  1
+  [ 3] .eh_frame         PROGBITS        00101564 002564 0008a8 00   A  0   0  4
+  [ 4] .note.gnu.pr[...] NOTE            00101e0c 002e0c 000028 00   A  0   0  4
+  [ 5] .data             PROGBITS        00101e40 002e40 000050 00  WA  0   0 32
+  [ 6] .bss              NOBITS          00101ea0 002e90 000100 00  WA  0   0 32
+  [ 7] .debug_info       PROGBITS        00000000 002e90 001ce5 00      0   0  1
+  [ 8] .debug_abbrev     PROGBITS        00000000 004b75 000b87 00      0   0  1
+  [ 9] .debug_aranges    PROGBITS        00000000 0056fc 000160 00      0   0  1
+  [10] .debug_line       PROGBITS        00000000 00585c 000be1 00      0   0  1
+  [11] .debug_str        PROGBITS        00000000 00643d 00069e 01  MS  0   0  1
+  [12] .comment          PROGBITS        00000000 006adb 00002e 01  MS  0   0  1
+  [13] .debug_ranges     PROGBITS        00000000 006b09 000018 00      0   0  1
+  [14] .symtab           SYMTAB          00000000 006b24 000540 10     15  22  4
+  [15] .strtab           STRTAB          00000000 007064 00028f 00      0   0  1
+  [16] .shstrtab         STRTAB          00000000 0072f3 0000a8 00      0   0  1
+Key to Flags:
+  W (write), A (alloc), X (execute), M (merge), S (strings), I (info),
+  L (link order), O (extra OS processing required), G (group), T (TLS),
+  C (compressed), x (unknown), o (OS specific), E (exclude),
+  D (mbind), p (processor specific)
+
+Non ci sono gruppi di sezioni in questo file.
+
+Intestazioni di programma:
+  Tipo           Offset   IndirVirt  IndirFis   DimFile DimMem  Flg Allin
+  LOAD           0x001000 0x00100000 0x00100000 0x01e90 0x01fa0 RWE 0x1000
+  NOTE           0x002e0c 0x00101e0c 0x00101e0c 0x00028 0x00028 R   0x4
+  GNU_PROPERTY   0x002e0c 0x00101e0c 0x00101e0c 0x00028 0x00028 R   0x4
+  GNU_STACK      0x000000 0x00000000 0x00000000 0x00000 0x00000 RW  0x10
+
+ Mappatura da sezione a segmento:
+  Sezioni del segmento...
+   00     .text .rodata .eh_frame .note.gnu.property .data .bss 
+   01     .note.gnu.property 
+   02     .note.gnu.property 
+   03     
+
+Non ci sono sezioni dinamiche in questo file.
+
+Non ci sono rilocazioni in questo file.
+No processor specific unwind information to decode
+
+Symbol table '.symtab' contains 84 entries:
+   Num:    Valore Dim  Tipo    Assoc  Vis      Ind Nome
+     0: 00000000     0 NOTYPE  LOCAL  DEFAULT  UND 
+     1: 00000000     0 FILE    LOCAL  DEFAULT  ABS shell.c
+     2: 001003f0    80 FUNC    LOCAL  DEFAULT    1 cd
+     3: 00000000     0 FILE    LOCAL  DEFAULT  ABS debug.c
+     4: 00000000     0 FILE    LOCAL  DEFAULT  ABS fcntl.c
+     5: 00000000     0 FILE    LOCAL  DEFAULT  ABS malloc.c
+     6: 00101ea0   256 OBJECT  LOCAL  DEFAULT    6 a_fixed_size_desc
+     7: 00101e88     4 OBJECT  LOCAL  DEFAULT    5 malloc_initialized
+     8: 001004d5   179 FUNC    LOCAL  DEFAULT    1 a_usr_space_init
+     9: 00100588    75 FUNC    LOCAL  DEFAULT    1 a_usr_space_alloc
+    10: 001005d3    84 FUNC    LOCAL  DEFAULT    1 a_usr_space_free
+    11: 00100627    92 FUNC    LOCAL  DEFAULT    1 init_malloc
+    12: 00000000     0 FILE    LOCAL  DEFAULT  ABS math.c
+    13: 00000000     0 FILE    LOCAL  DEFAULT  ABS socket.c
+    14: 00000000     0 FILE    LOCAL  DEFAULT  ABS stat.c
+    15: 00000000     0 FILE    LOCAL  DEFAULT  ABS stdio.c
+    16: 00100b5a    93 FUNC    LOCAL  DEFAULT    1 print_num
+    17: 00100bb7    73 FUNC    LOCAL  DEFAULT    1 print_char
+    18: 00000000     0 FILE    LOCAL  DEFAULT  ABS stdlib.c
+    19: 00101e8c     4 OBJECT  LOCAL  DEFAULT    5 seed.0
+    20: 00000000     0 FILE    LOCAL  DEFAULT  ABS string.c
+    21: 00000000     0 FILE    LOCAL  DEFAULT  ABS unistd.c
+    22: 001011d6    48 FUNC    GLOBAL DEFAULT    1 strcpy
+    23: 001012d6    26 FUNC    GLOBAL DEFAULT    1 pause
+    24: 00100775    68 FUNC    GLOBAL DEFAULT    1 _free
+    25: 00100c00   246 FUNC    GLOBAL DEFAULT    1 printf
+    26: 00100aac    35 FUNC    GLOBAL DEFAULT    1 close_socket
+    27: 0010099d   149 FUNC    GLOBAL DEFAULT    1 connect
+    28: 001013f2    29 FUNC    GLOBAL DEFAULT    1 getpid
+    29: 00100e26   145 FUNC    GLOBAL DEFAULT    1 getc
+    30: 00100acf    63 FUNC    GLOBAL DEFAULT    1 ping
+    31: 00101037    22 FUNC    GLOBAL DEFAULT    1 malloc
+    32: 00100eb7    35 FUNC    GLOBAL DEFAULT    1 remove
+    33: 001012f0    33 FUNC    GLOBAL DEFAULT    1 sleep
+    34: 001008af    77 FUNC    GLOBAL DEFAULT    1 recvfrom
+    35: 00100f5e   184 FUNC    GLOBAL DEFAULT    1 itoa
+    36: 001007e8    35 FUNC    GLOBAL DEFAULT    1 socket
+    37: 001013c3    47 FUNC    GLOBAL DEFAULT    1 lseek
+    38: 001004ba    27 FUNC    GLOBAL DEFAULT    1 flush_inode_cache
+    39: 0010142c    41 FUNC    GLOBAL DEFAULT    1 setpgid
+    40: 00100880    47 FUNC    GLOBAL DEFAULT    1 accept
+    41: 00101495    27 FUNC    GLOBAL DEFAULT    1 read_test
+    42: 00100000     0 NOTYPE  GLOBAL DEFAULT    1 text
+    43: 0010136a    54 FUNC    GLOBAL DEFAULT    1 write
+    44: 001014cb    33 FUNC    GLOBAL DEFAULT    1 select_dev
+    45: 00101206   109 FUNC    GLOBAL DEFAULT    1 strcat
+    46: 0010080b    82 FUNC    GLOBAL DEFAULT    1 bind
+    47: 001013a0    35 FUNC    GLOBAL DEFAULT    1 chdir
+    48: 00101273    41 FUNC    GLOBAL DEFAULT    1 exec
+    49: 00101159   125 FUNC    GLOBAL DEFAULT    1 strstr
+    50: 00101064    49 FUNC    GLOBAL DEFAULT    1 rand
+    51: 001014b0    27 FUNC    GLOBAL DEFAULT    1 signal
+    52: 00101334    54 FUNC    GLOBAL DEFAULT    1 read
+    53: 0010045b    27 FUNC    GLOBAL DEFAULT    1 check_free_mem
+    54: 001010dd    84 FUNC    GLOBAL DEFAULT    1 strncmp
+    55: 001008fc   161 FUNC    GLOBAL DEFAULT    1 sendto
+    56: 00101ea0     0 NOTYPE  GLOBAL DEFAULT    6 bss
+    57: 00100440    27 FUNC    GLOBAL DEFAULT    1 panic
+    58: 00100a6f    61 FUNC    GLOBAL DEFAULT    1 read_socket
+    59: 0010085d    35 FUNC    GLOBAL DEFAULT    1 listen
+    60: 0010129c    58 FUNC    GLOBAL DEFAULT    1 fork
+    61: 00100000     0 NOTYPE  GLOBAL DEFAULT  ABS process_load_address
+    62: 00101e40     0 NOTYPE  GLOBAL DEFAULT    5 data
+    63: 00100000  1008 FUNC    GLOBAL DEFAULT    1 main
+    64: 00101095    72 FUNC    GLOBAL DEFAULT    1 strcmp
+    65: 00100683   242 FUNC    GLOBAL DEFAULT    1 _malloc
+    66: 00100cf6   304 FUNC    GLOBAL DEFAULT    1 scanf
+    67: 00100476    27 FUNC    GLOBAL DEFAULT    1 check_free_pid
+    68: 00100b31    41 FUNC    GLOBAL DEFAULT    1 stat
+    69: 00101455    29 FUNC    GLOBAL DEFAULT    1 tcgetpgrp
+    70: 00101016    33 FUNC    GLOBAL DEFAULT    1 exit
+    71: 001007d4    20 FUNC    GLOBAL DEFAULT    1 log2
+    72: 001014ec     0 NOTYPE  GLOBAL DEFAULT    2 rodata
+    73: 00100eda   132 FUNC    GLOBAL DEFAULT    1 atoi
+    74: 00101131    40 FUNC    GLOBAL DEFAULT    1 strlen
+    75: 00100491    41 FUNC    GLOBAL DEFAULT    1 open
+    76: 001007b9    27 FUNC    GLOBAL DEFAULT    1 pow2
+    77: 00101e40    72 OBJECT  GLOBAL DEFAULT    5 user_process
+    78: 0010140f    29 FUNC    GLOBAL DEFAULT    1 getpgid
+    79: 00100a32    61 FUNC    GLOBAL DEFAULT    1 write_socket
+    80: 00100b0e    35 FUNC    GLOBAL DEFAULT    1 mkdir
+    81: 00101311    35 FUNC    GLOBAL DEFAULT    1 close
+    82: 00101472    35 FUNC    GLOBAL DEFAULT    1 tcsetpgrp
+    83: 0010104d    23 FUNC    GLOBAL DEFAULT    1 free
+
+In questo file non è stata trovata alcuna informazione sulla versione.
+
+Displaying notes found in: .note.gnu.property
+  Proprietario         Dimensione dati	Description
+  GNU                  0x00000018	NT_GNU_PROPERTY_TYPE_0
+      Properties: x86 feature used: x86
+	x86 ISA used: 

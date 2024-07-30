@@ -1,0 +1,32 @@
+performace su io con su chiamata read_test (30 MB)
+1 block with int 14
+1 block multi no int 10
+1 block multi with  int 11
+16 block multi no int 6
+16 block multi with int 6
+
+io codice regolare(int disabilitati su network 30 MB)
+1 block multi no int 9
+1 block multi with int 9
+
+
+sp network + disk
+ubuntu 25 (talvolta 54)
+g-os 42 (con int disabilitati no dma)
+g-os 25 (nuova versione con dma block size 4K)
+g-os 20 (nuova versione con dma block size 16K) 
+g-os 19 (nuova versione con dma block size 32K)
+g-os 18 (nuova versione con dma block size 64512)
+
+sp solo network
+ubuntu 25
+g-os 18
+
+Consideration:
+Network and disk requestes can't overlap because cpu is almost always busy to serve pio mode flow (interrupts and copy)
+I.e if I request 16K cpu has to perform 16k/block_size copy interrput serving  instead of only one.Also seems to be crucial IO port read/write time.
+
+
+
+
+

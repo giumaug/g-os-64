@@ -1,0 +1,43 @@
+--------------------------------g-os--------------------------------
+selection sort
+qemu 350
+kvm 50
+
+sp 30Mx20(reading data from disk)
+qemu 46
+kvm  15
+
+sp 300M 1G (sending data over socket)
+qemu 26 87
+kvm  8 27
+
+tcpf  300 1G (receiving data from socket) (usare ht sotto /home/peppe/Scrivania/image/test come server )
+qemu 16 57
+kvm   6 21
+
+sp 30Mx20 (sending data over socket + disk)
+qemu 105
+kvm   36
+--------------------------------------------------------------------
+
+-------------------------------ubuntu-------------------------------
+selection sort 0x30000
+qemu 356
+kvm   50
+
+sp 30Mx20 (reading data from disk)
+qemu 38
+kvm 27
+
+sp 300M 1G (sending data over socket)
+qemu 18 58
+kvm   8 25
+
+tcpf  300M 1G (receiving data from socket)
+qemu 10 33
+kvm   4 14
+
+sp 300M 1G (sending data over socket + disk)
+qemu 114
+kvm   41
+--------------------------------------------------------------------
