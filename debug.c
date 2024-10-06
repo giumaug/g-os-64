@@ -4,7 +4,8 @@
 #include "timer.h"
 
 unsigned int collect_mem=0;
-unsigned int collected_mem[50005];
+// original unsigned int collected_mem[50005];
+unsigned int collected_mem[1000];
 unsigned int collected_mem_index=0;
 unsigned int allocated_block=0;
 unsigned int start_count = 0;

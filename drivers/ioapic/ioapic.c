@@ -12,7 +12,7 @@ void init_ioapic()
 	u32 offset;
 	u32 val;
 	
-	map_vm_mem(system.master_page_dir, IOREGSEL, IOREGSEL, PAGE_SIZE,3);
+	map_vm_mem(system.master_page_pml4, IOREGSEL, IOREGSEL, PAGE_SIZE, 3);
 	ioregsel = IOREGSEL;
 	ioregwin = IOREGWIN;
 	for (i = 0; i < 46; i += 2) //23

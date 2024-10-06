@@ -18,10 +18,13 @@ void init_pit()
 	out(BINARIY_COUNT_MODE,CONTROL_WORD);
 	out(LOW_QUANTUM,COUNTER_0);
 	out(HI_QUANTUM,COUNTER_0);
-	i_desc.baseLow=((int)&int_handler_pit) & 0xFFFF;
+	i_desc.baseLow=((u16) &int_handler_pit) & 0xFFFF;
 	i_desc.selector=0x8;
 	i_desc.flags=0x08e00; //0x0EF00;
-	i_desc.baseHi=((int)&int_handler_pit)>>0x10;
+	i_desc.baseHi=((u16) &int_handler_pit) >> 0x10;
+	i_desc.baseExt = ((u32)(&int_handler_pit)) >> 0x020;
+	i_desc.pad = 0;
+	
 	status = 1;
 	set_idt_entry(0x22,&i_desc);
 }

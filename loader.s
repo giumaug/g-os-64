@@ -51,9 +51,9 @@ MultiBootHeader:
 .lcomm PML4,0x1000
 .lcomm PTR,0x1000
 .lcomm L_DIR,0x1000
-.lcomm L_PAGE,0x8000
-.lcomm K_DIR,0x01000
-.lcomm K_PAGE,0x8000
+.lcomm L_PAGE,0x13000
+.lcomm K_DIR,0x1000
+.lcomm K_PAGE,0x1000
 
 .lcomm TSS_ADD,8
 .align 32
@@ -144,11 +144,9 @@ toc:
 .word end_of_gdt - gdt_data - 1 
 .long gdt_data
 
-MULTIBOOT_INFO:
-.long 0
+.lcomm MULTIBOOT_INFO,8
+.lcomm MULTIBOOT_MAGIC,8
 
-MULTIBOOT_MAGIC:
-.long 0
 
 .section .text
 .code32
@@ -157,9 +155,7 @@ loader:
 	cli
 	mov %ebx, MULTIBOOT_INFO
 	mov %eax, MULTIBOOT_MAGIC
-	
-	
-     
+
 #Build the page map level 4.
     mov $PML4,%ebx
     mov $PTR,%eax
@@ -176,14 +172,14 @@ loader:
 	mov $L_DIR,%eax
 	mov $L_PAGE,%ecx
 	or $0b11,%ecx
-	mov $0x9,%ebx
+	mov $0x14,%ebx
 	call fill_page_dir
 	
 #Build the loader page table
 	mov $0x0,%eax
 	or $0b11,%eax
 	mov $L_PAGE,%ecx
-	mov $0x1000,%ebx
+	mov $0x2601,%ebx
 	call fill_page
 	
 #Build the kernel page directory pointer table.
@@ -196,14 +192,14 @@ loader:
 	mov $K_DIR,%eax
 	mov $K_PAGE,%ecx
 	or $0b11,%ecx
-	mov $0x11,%ebx
+	mov $0x1,%ebx
 	call fill_page_dir
 
-#Build the loader page table
+#Build the kernel page table
 	mov $0x100000,%eax
 	or $0b11,%eax
 	mov $K_PAGE, %ecx
-	mov $0x1000, %ebx
+	mov $0x200, %ebx
 	call fill_page
  
 #Disable IRQs
@@ -269,7 +265,7 @@ long_mode:
 	mov	%ax,%es
 	mov $(TSS+0x04),%rax
 	mov	%rax,TSS_ADD
-	mov $TSS_ADD,%rcx
+	mov $TSS_ADD,%rdx
 
 # Stack grows from botton to up (push decrement address stack,pop increment)
 	mov $(INIT_STACK+INIT_STACK_SIZE),%rsp
@@ -301,12 +297,13 @@ long_mode:
 	mov $0x28,%rax
     ltr %rax
 #moltiboot data
-	mov MULTIBOOT_INFO, %rax
-	mov MULTIBOOT_MAGIC, %rbx
-    push 	%rcx
-	push  	%rbx                   	
-   	push  	%rax                    	
-	movabs $kmain, %rdx
-	call %rdx            		
+	mov MULTIBOOT_INFO, %rdi
+	mov MULTIBOOT_MAGIC, %rsi
+    push 	%rdx
+	push  	%rsi                   	
+   	push  	%rdi                    	
+	movabs $kmain, %rcx
+	call %rcx            		
 	cli
     hlt
+     	

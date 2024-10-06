@@ -178,18 +178,20 @@ t_i8254x* init_8254x()
 		i8254x->io_base=NULL;
 		i8254x->bar_type=0;
 		CURRENT_PROCESS_CONTEXT(current_process_context);
-		map_vm_mem(current_process_context->page_dir,I8254X_VIRT_BAR0_MEM,(((u32) (bar0)) & 0xFFFFFFF0),I8254X_VIRT_BAR0_MEM_SIZE,3);
-		SWITCH_PAGE_DIR(FROM_VIRT_TO_PHY((current_process_context->page_dir))) 
+		map_vm_mem(current_process_context->page_pml4,I8254X_VIRT_BAR0_MEM,(((u32) (bar0)) & 0xFFFFFFF0),I8254X_VIRT_BAR0_MEM_SIZE,3);
+		SWITCH_PAGE_DIR(FROM_VIRT_TO_PHY((current_process_context->page_pml4))) 
 	}
 
 	i8254x->irq_line=read_pci_config_word(I8254X_BUS,I8254X_SLOT,I8254X_FUNC,I8254X_IRQ_LINE-3) & 0xFF;
 	read_mac_i8254x(i8254x);
 	start_link_i8254x(i8254x);
 
-	i_desc.baseLow=((int)&int_handler_i8254x) & 0xFFFF;
+	i_desc.baseLow=((u16)&int_handler_i8254x) & 0xFFFF;
 	i_desc.selector=0x8;
 	i_desc.flags=0x08e00;
-	i_desc.baseHi=((int)&int_handler_i8254x)>>0x10;
+	i_desc.baseHi=((u16)&int_handler_i8254x) >> 0x10;
+	i_desc.baseExt = ((u32)(&int_handler_i8254x)) >> 0x020;
+	i_desc.pad = 0;
 	set_idt_entry(0x30,&i_desc);
 
 	reset_multicast_array(i8254x);
@@ -335,7 +337,7 @@ exit:
 		{                                                                                                       
 				_processor_reg=_new_process_context.processor_reg;                                      
 		}                                                                                                       
-		SWITCH_PAGE_DIR(FROM_VIRT_TO_PHY((_new_process_context.page_dir)))                       
+		SWITCH_PAGE_DIR(FROM_VIRT_TO_PHY((_new_process_context.page_pml4)))                       
 		DO_STACK_FRAME(_processor_reg.rsp-8);                                                                   
                                                                                                                         
 		if (_action2==2)                                                                                        

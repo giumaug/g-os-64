@@ -45,17 +45,19 @@ t_ahci_device_desc* init_ahci(t_device_desc* device_desc)
 	pci_int_line = read_pci_config_word(AHCI_PCI_BUS, AHCI_PCI_SLOT, AHCI_PCI_FUNC, AHCI_PCI_INT_LINE);
     pci_int_line |= 0x1;
 	write_pci_config_word(AHCI_PCI_BUS, AHCI_PCI_SLOT, AHCI_PCI_FUNC, AHCI_PCI_INT_LINE, pci_int_line);
-    map_vm_mem(system.master_page_dir, AHCI_VIRT_MEM, ((u32) (phy_abar)), AHCI_VIRT_MEM_SIZE, 3);
+    map_vm_mem(system.master_page_pml4, AHCI_VIRT_MEM, ((u32) (phy_abar)), AHCI_VIRT_MEM_SIZE, 3);
     
     device_desc_ahci->mem->ghc = device_desc_ahci->mem->ghc | 2;
     port = &(device_desc_ahci->mem->ports[0]);
     port_init(port, device_desc_ahci->mem_map, 0);
     device_desc_ahci->active_port = port;
     
-	i_desc.baseLow = ((int) &int_handler_ahci) & 0xFFFF;
+	i_desc.baseLow = ((u16) &int_handler_ahci) & 0xFFFF;
 	i_desc.selector = 0x8;
 	i_desc.flags = 0x08e00;
-	i_desc.baseHi = ((int) &int_handler_ahci) >> 0x10;
+	i_desc.baseHi = ((u16) &int_handler_ahci) >> 0x10;
+	i_desc.baseExt = ((u32)(&int_handler_ahci)) >> 0x020;
+	i_desc.pad = 0;
 	set_idt_entry(0x31, &i_desc);
 	
 	device_desc->dev = device_desc_ahci;
@@ -73,7 +75,7 @@ void free_ahci(t_ahci_device_desc* device_desc)
     
     port = &(device_desc->mem->ports[0]);
     port_free(port, 0);
-    umap_vm_mem(system.master_page_dir, AHCI_VIRT_MEM, AHCI_VIRT_MEM_SIZE, 0);
+    umap_vm_mem(system.master_page_pml4, AHCI_VIRT_MEM, AHCI_VIRT_MEM_SIZE, 0);
     kfree(device_desc);
 }
 

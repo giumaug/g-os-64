@@ -5,7 +5,7 @@
 #include "lib/lib.h"
 
 extern struct t_llist* kbc_wait_queue;
-extern unsigned int *master_page_dir;
+extern unsigned int* master_page_pml4;
 extern unsigned int collect_mem;
 
 void do_context_switch(struct t_process_context *current_process_context,
@@ -413,7 +413,7 @@ int _fork(struct t_processor_reg processor_reg)
 								     parent_process_context->ustack_mem_reg->end_addr);	
 	}
 	ll_prepend(system.scheduler_desc->scheduler_queue[parent_process_context->curr_sched_queue_index],child_process_context);
-	child_process_context->page_dir = clone_vm_process(parent_process_context->page_dir,
+	child_process_context->page_pml4 = clone_vm_process(parent_process_context->page_pml4,
 							 parent_process_context->process_type,
 							 FROM_VIRT_TO_PHY(kernel_stack_addr));
 
@@ -497,15 +497,15 @@ u32 _exec(char* path,char* argv[])
 		current_process_context->heap_mem_reg = create_mem_reg(HEAP_VIRT_MEM_START_ADDR,HEAP_VIRT_MEM_START_ADDR+HEAP_INIT_SIZE);
 		current_process_context->ustack_mem_reg = create_mem_reg(USER_STACK-USER_STACK_INIT_SIZE,USER_STACK);
 		page_addr = buddy_alloc_page(system.buddy_desc,PAGE_SIZE);
-		map_vm_mem(current_process_context->page_dir,(USER_STACK-PAGE_SIZE),FROM_VIRT_TO_PHY(page_addr),PAGE_SIZE,7);
+		map_vm_mem(current_process_context->page_pml4,(USER_STACK-PAGE_SIZE),FROM_VIRT_TO_PHY(page_addr),PAGE_SIZE,7);
 		system.buddy_desc->count[BLOCK_INDEX_FROM_PHY(FROM_VIRT_TO_PHY((unsigned int)page_addr))]++;
-		SWITCH_PAGE_DIR(FROM_VIRT_TO_PHY((current_process_context->page_dir))) 
+		SWITCH_PAGE_DIR(FROM_VIRT_TO_PHY((current_process_context->page_pml4))) 
 	}
 	else
 	{
 		free_vm_process_user_space(current_process_context);
 		current_process_context->process_mem_reg->end_addr = PROC_VIRT_MEM_START_ADDR+process_size;
-		SWITCH_PAGE_DIR(FROM_VIRT_TO_PHY((current_process_context->page_dir))) 
+		SWITCH_PAGE_DIR(FROM_VIRT_TO_PHY((current_process_context->page_pml4))) 
 	}
 	current_process_context->process_type = USERSPACE_PROCESS;
 

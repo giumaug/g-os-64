@@ -72,7 +72,7 @@ struct t_process_context
 	//0 thread 1 process
 	u32 process_type;
 	unsigned int phy_space_size;
-	char* page_dir;
+	char* page_pml4;
 	int sleep_time;
 	//when io queue manager implemented create a sleep manager too and move
 	//this filed inside it

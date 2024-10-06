@@ -2,7 +2,6 @@
 #include "idt.h"
 #include "scheduler/scheduler.h"
 #include "virtual_memory/vm.h"
-#include "drivers/ata/ata.h"
 #include "syscall_handler.h"
 #include "debug.h"
 #include "ext2/ext2.h"
@@ -316,7 +315,7 @@ void syscall_handler()
 		{                                                                                                       
 				_processor_reg=_new_process_context.processor_reg;                                      
 		}                                                                                                       
-		SWITCH_PAGE_DIR(FROM_VIRT_TO_PHY(_new_process_context.page_dir))                       
+		SWITCH_PAGE_DIR(FROM_VIRT_TO_PHY(_new_process_context.page_pml4))                       
 		DO_STACK_FRAME(_processor_reg.rsp-8);                                                                   
                                                                                                                         
 		if (_action2==2)                                                                                        

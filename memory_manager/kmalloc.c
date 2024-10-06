@@ -18,8 +18,15 @@ void init_kmallocs()
 {
 	unsigned int i;
 	void* mem_addr = NULL;
+	
+//	u64 _allocated_mem = ALLOCATED_MEM;
+//	u64 _buddy_struct_start_addr = STATIC_BUDDY_STRUCT_START_ADDR; //0x300000ULL * G_PHY_MEM_SIZE
+//	u64 _pool_start_addr = POOL_START_ADDR;
+//	u64 _mem_to_pool = MEM_TO_POOL; // x 16
+//	u64 _buddy_start_addr = BUDDY_START_ADDR;
+	
 
-	mem_addr = POOL_START_ADDR + VIRT_MEM_START_ADDR - MEM_TO_POOL;
+	mem_addr = (u64) (POOL_START_ADDR + VIRT_MEM_START_ADDR - PHY_MEM_START_ADDR - MEM_TO_POOL);
 	//ALLOCATED POOL OF 4 8 16 32 64 128 256 512 1024 2048 4096 8192 16384 32768 65536 131072 BYTE
 	for (i = 0; i < POOL_NUM; i++)
 	{
@@ -169,11 +176,7 @@ void* kmalloc(unsigned int mem_size)
 	{
 		panic();
 	}
-	if (i == 6 && a_fixed_size_desc[i].current_free_block < 100)
-	{
-		panic();
-	}
-
+	
 //	if (collect_mem == 1)
 //	{
 //		collect_mem_alloc(mem_add);
@@ -186,17 +189,13 @@ void _kfree(void *address)
 {	
 	int i;
 	unsigned int pool_index;
-	u32 pool_offset;
+	u64 pool_offset;
 
 	SAVE_IF_STATUS
 	CLI	  
 	pool_index=0;
-
 	pool_offset = address - VIRT_MEM_START_ADDR - POOL_START_ADDR;
-
-	int mem_pool = MEM_TO_POOL;
-	int pool_start = POOL_START_ADDR;
-
+	
 	switch(pool_offset)
 	{
 		case 0 ... MEM_TO_POOL - 1 :
@@ -294,11 +293,14 @@ void kfree(void* address)
 	SAVE_IF_STATUS
 	CLI	  
 	pool_index=0;
-	while ((pool_index+1)*MEM_TO_POOL<(address-VIRT_MEM_START_ADDR-POOL_START_ADDR))
+	while ((pool_index + 1) * MEM_TO_POOL < (address - VIRT_MEM_START_ADDR + PHY_MEM_START_ADDR - POOL_START_ADDR))
 	{
 		pool_index++;
 	}
 	a_fixed_size_free(&a_fixed_size_desc[pool_index],address);
+	
+	//(POOL_START_ADDR + VIRT_MEM_START_ADDR - PHY_MEM_START_ADDR - MEM_TO_POOL)
+	
 //	if (collect_mem == 1)
 //	{
 //		collect_mem_free(address);

@@ -280,10 +280,12 @@ void init_kbc()
 	struct t_i_desc i_desc;
 	
 	in_buf=new_queue();
-	i_desc.baseLow = ((int)&int_handler_kbc) & 0xFFFF;
+	i_desc.baseLow = ((u16)&int_handler_kbc) & 0xFFFF;
 	i_desc.selector = 0x8;
 	i_desc.flags = 0x08e00; //0x0EF00;
-	i_desc.baseHi = ((int) &int_handler_kbc) >> 0x10;
+	i_desc.baseHi = ((u16) &int_handler_kbc) >> 0x10;
+	i_desc.baseExt = ((u32)(&int_handler_kbc)) >> 0x020;
+	i_desc.pad = 0;
 	set_idt_entry(0x21,&i_desc);
 	out(0xad,0x64);
 	in(0x60);

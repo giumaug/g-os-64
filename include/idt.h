@@ -5,17 +5,17 @@
 #include "scheduler/process.h"
 
 struct t_i_desc {
-   unsigned short int baseLow;    	 
-   unsigned short int selector;      	
-   unsigned short flags;
-   unsigned short baseHi;
-   unsigned int baseExt;
-   unsigned int pad;
+   u16 baseLow;    	 
+   u16 selector;      	
+   u8 flags;
+   u16 baseHi;
+   u32 baseExt;
+   u32 pad;
 };
 
 struct t_idt_ptr {
-	unsigned short int idt_size __attribute__((__packed__));
-	unsigned long idt_address __attribute__((__packed__));
+	u16 idt_size __attribute__((__packed__));
+	u64 idt_address __attribute__((__packed__));
 };
 
 void int_handler_generic();
@@ -76,7 +76,7 @@ void set_idt_entry(int entry,struct t_i_desc* i_desc);
 		{                                                                                                       	\
 			_processor_reg=_new_process_context.processor_reg;                                      	            \
 		}                                                                                                       	\
-		SWITCH_PAGE_DIR(FROM_VIRT_TO_PHY((_new_process_context.page_dir)))                       	\
+		SWITCH_PAGE_DIR(FROM_VIRT_TO_PHY((_new_process_context.page_pml4)))                       	\
 		DO_STACK_FRAME(_processor_reg.rsp - 8);                                                                   	\
                                                                                                                     \
 		if (_action2 == 2)                                                                                        	\

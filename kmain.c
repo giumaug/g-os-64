@@ -9,7 +9,6 @@
 #include "syscall_handler.h"
 #include "network/network.h"
 #include "drivers/kbc/8042.h"
-#include "drivers/ata/ata.h"
 #include "drivers/ahci/ahci.h"
 #include "drivers/lapic/lapic.h"
 #include "framebuffer/framebuffer.h"
@@ -29,7 +28,7 @@ void kmain(multiboot_info_t* mbd, unsigned int magic, unsigned int init_data_add
 	_mbd = *mbd;
 	static struct t_process_info process_info;
 	static t_scheduler_desc scheduler_desc;
-	static t_buddy_desc buddy_desc;
+//	static t_buddy_desc buddy_desc;
 	static unsigned int* init_data;
     init_data = init_data_add;
 	static struct t_process_context* process_context = NULL;
@@ -49,22 +48,28 @@ void kmain(multiboot_info_t* mbd, unsigned int magic, unsigned int init_data_add
 	system.run_time_1 = 0;
 	device_num = 0;
 	
+	u64* xxx;
+	
 	init_data = init_data_add;
  	CLI
 	system.force_scheduling = 0;
 	system.process_info = &process_info;
-	system.buddy_desc = &buddy_desc;
+	//system.buddy_desc = &buddy_desc;
 	system.scheduler_desc = &scheduler_desc;
 	system.int_path_count = 0;
 	system.scheduler_desc->scheduler_queue[0] = 0;
 	system.process_info->current_process = NULL;
 	
-	system.master_page_dir = (void*)init_virtual_memory();
-	SWITCH_PAGE_DIR(system.master_page_dir)
+	system.master_page_pml4 = (void*)init_virtual_memory();
+	SWITCH_PAGE_DIR(system.master_page_pml4)
 	
 	init_kmallocs();
+	
+	xxx = kmalloc(24);
+	kfree(xxx);
+	
 	init_idt();
-	buddy_init(system.buddy_desc);
+	system.buddy_desc = buddy_init();
 	init_scheduler();
 	
 	system.timer_list = new_dllist();
@@ -82,10 +87,12 @@ void kmain(multiboot_info_t* mbd, unsigned int magic, unsigned int init_data_add
 	system.root_fs = &ext2_d1;
 	
 	system.active_console_desc = &console_desc;
-	i_desc.baseLow = ((int)&syscall_handler) & 0xFFFF;
+	i_desc.baseLow = ((u16) &syscall_handler) & 0xFFFF;
 	i_desc.selector = 0x8;
 	i_desc.flags = 0x0EF00; 
-	i_desc.baseHi = ((int)&syscall_handler)>>0x10;
+	i_desc.baseHi = ((u16) &syscall_handler)>>0x10;
+	i_desc.baseExt=((u32)( &syscall_handler)) >> 0x020;
+    i_desc.pad=0;
 	set_idt_entry(0x80,&i_desc);
 
 	system.process_info->sleep_wait_queue = new_dllist();	
@@ -121,7 +128,7 @@ void kmain(multiboot_info_t* mbd, unsigned int magic, unsigned int init_data_add
 	process_context->next_sd = 0;
 	process_context->sig_num = 0;
 	 
-	process_context->page_dir = buddy_alloc_page(system.buddy_desc,0x1000);                      
+	process_context->page_pml4 = buddy_alloc_page(system.buddy_desc,0x1000);                      
 	init_vm_process(process_context);
 	*(system.process_info->tss.ss) = 0x18;
 	*(system.process_info->tss.esp) = KERNEL_STACK;

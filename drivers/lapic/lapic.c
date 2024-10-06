@@ -30,7 +30,7 @@ void init_lapic()
 	u32 val;
 	u32 lapic_id;
 	
-	map_vm_mem(system.master_page_dir, LAPIC_BASE, LAPIC_BASE, PAGE_SIZE,3);
+	map_vm_mem(system.master_page_pml4, LAPIC_BASE, LAPIC_BASE, PAGE_SIZE,3);
 	init_pit();
 	// Clear Task Priority register; this enables all LAPIC interrupts
 	val = read_reg(LAPIC_TPR);
@@ -75,10 +75,12 @@ static void init_timer()
 		panic();
 	}
 
-	i_desc.baseLow = ((int) &int_handler_lapic) & 0xFFFF;
+	i_desc.baseLow = ((u16) &int_handler_lapic) & 0xFFFF;
 	i_desc.selector = 0x8;
 	i_desc.flags = 0x08e00;
-	i_desc.baseHi =((int) &int_handler_lapic) >> 0x10;
+	i_desc.baseHi =((u16) &int_handler_lapic) >> 0x10;
+	i_desc.baseExt = ((u32)(&int_handler_lapic)) >> 0x020;
+	i_desc.pad = 0;
 	set_idt_entry(0x38, &i_desc);
 
 	count = lapic_freq / TICK_FRQ; //lapic_freq / count = TICK_FRQ

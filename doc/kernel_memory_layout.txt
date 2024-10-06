@@ -5,15 +5,17 @@ process_virtual_address 0x100000 (size: 1M - 8G)
 process_heap_virtual_address 0x200000000 (size: 8G - 15G)
 kernel_virtual_stack 0x3FFCFF000 (16G - 3M - 4k hole; size = 0x2000)
 user_virtual_stack  0x3FFCFC000 (16G - 3M - 4K hole - 8K - 4K hole;size 0x40000000)
-video memory 16G - 3M (physical video memory size 2457600 bytes)
+video memory 0xFEC00000 (physical video memory size 2457600 bytes)
+drivers memory remapped area 16G - 6M
+Recycled 0xFEC00000 4M page buddy aligned page for video memory and lapic apic mapping.
 
 temp mapping
-kernel mapping 16G - 16G+12M -> 1M-13M
-loader mapping 13M - 16M -> 13M - 16M
+kernel mapping 16G - 16G + 1M -> 1M - 2M
+loader mapping 3M - 38M -> 3M - 38M (1M for loader + 34MB for final master page table) 
 
 final mapping
-kernel mapping 16G - 16G+12M -> 1M-13M
-kernel master page table 14M - 36MB (WROST CASE) Here ledt 1M hole to not overlap temp and final page tables
+kernel mapping 16G - 16G + 1M -> 1M - 2M
+kernel master page table 4M - 38MB (WROST CASE) Here ledt 1M hole to not overlap temp and final page tables
 
 master page table size
 33 MB for master page mapping 16G

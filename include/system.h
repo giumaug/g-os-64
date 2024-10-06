@@ -51,7 +51,7 @@ typedef struct s_system
 	struct t_process_info* process_info;
 	t_console_desc* active_console_desc;
 	struct s_buddy_desc* buddy_desc;
-	u64* master_page_dir;
+	u64* master_page_pml4;
 	struct s_scheduler_desc* scheduler_desc;
 	struct s_ext2* root_fs;
 	struct s_ext2* scnd_fs;
