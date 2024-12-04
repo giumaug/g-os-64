@@ -7,7 +7,7 @@
 struct t_i_desc {
    u16 baseLow;    	 
    u16 selector;      	
-   u8 flags;
+   u16 flags;
    u16 baseHi;
    u32 baseExt;
    u32 pad;

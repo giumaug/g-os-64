@@ -21,7 +21,7 @@ t_buddy_desc* buddy_init()
 	int i,j;
 	
 	buddy = VIRT_MEM_START_ADDR - PHY_MEM_START_ADDR + STATIC_BUDDY_STRUCT_START_ADDR;
-	mem_addr = 0;
+	mem_addr = BUDDY_START_ADDR;
 	max_page_size = PAGE_SIZE * (1 << (NUM_LIST - 1));
 	
 	for (i = 0; i < NUM_LIST; i++) 
@@ -38,11 +38,21 @@ t_buddy_desc* buddy_init()
 		buddy->page_list_ref[BLOCK_INDEX(mem_addr)] = 0;
 		buddy->count[BLOCK_INDEX(mem_addr)] = 0;
 		mem_addr += max_page_size;
-		if (mem_addr == 0xF0000000) 
+		//AHCI + 8254x memory
+		if (mem_addr = 0xF1000000)
 		{
-			fill_buddy(buddy, 8, 0xF0300000, 1);
-			mem_addr=0xF0400000;
+			fill_buddy(buddy, 4, 0xF1010000, 1);
+			fill_buddy(buddy, 0, 0xF1022000, 14);
+			mem_addr = 0xF1030000;
 		}
+		//Video memory
+		else if (mem_addr == 0xFFC00000) 
+		{
+			fill_buddy(buddy, 4, 0xFFC00000, 15);
+			fill_buddy(buddy, 0, 0xFFCF0000, 15);
+			mem_addr = 0x100000000;
+		}
+		//APIC + LAPIC memory
 		else if (mem_addr == 0xFEC00000)
 		{
 			fill_buddy(buddy, 0, 0xFEC01000, 15);
@@ -51,7 +61,8 @@ t_buddy_desc* buddy_init()
 			
 			fill_buddy(buddy, 0, 0xFEE01000, 15);
 			fill_buddy(buddy, 4, 0xFEE10000, 15);
-			fill_buddy(buddy, 8, 0xFEF00000, 16);
+			fill_buddy(buddy, 8, 0xFEF00000, 1);
+			mem_addr = 0xFF000000;
 		}
 	}
 	return buddy;
@@ -89,7 +100,7 @@ void* buddy_alloc_page(t_buddy_desc* buddy, u64 mem_size)
 	void* new_mem_addr = NULL;
 	int i;
 	int y;
-
+	
 	SAVE_IF_STATUS
 	CLI	
 	for (list_index = 0; list_index < NUM_LIST; list_index++) 
@@ -135,8 +146,8 @@ void* buddy_alloc_page(t_buddy_desc* buddy, u64 mem_size)
 	buddy->order[BLOCK_INDEX((u64)page_addr)] = (list_index | 16);
 	buddy->page_list_ref[BLOCK_INDEX((u64)page_addr)] = node;
 	system.buddy_desc->count[BLOCK_INDEX((u64)page_addr)] = 0;
-	new_mem_addr = page_addr + BUDDY_START_ADDR + VIRT_MEM_START_ADDR;
-
+	new_mem_addr = page_addr + VIRT_MEM_START_ADDR;
+	
 //	if (collect_mem == 1)
 //	{
 //		collect_mem_alloc(new_mem_addr);
@@ -170,7 +181,8 @@ void buddy_free_page(t_buddy_desc* buddy,void* to_free_page_addr)
 //		collect_mem_free(page_addr);
 //	}
 
-	page_addr -= (BUDDY_START_ADDR + VIRT_MEM_START_ADDR);
+	//page_addr -= (BUDDY_START_ADDR + VIRT_MEM_START_ADDR);
+	page_addr -= VIRT_MEM_START_ADDR;
 	if ((buddy->order[BLOCK_INDEX(page_addr)] & 16) == 0)
 	{
 		panic();
@@ -239,7 +251,7 @@ void buddy_clean_mem(void* page_addr)
 {
 	int i;
 
-	for ( i = 0; i < PAGE_SIZE / 4; i++)
+	for ( i = 0; i < PAGE_SIZE / 8; i++)
 	{
 		((u64*)page_addr)[i] = 0;
 	}
@@ -259,13 +271,6 @@ static void buddy_init_mem(t_buddy_desc* buddy)
 
 	for ( i = 0; i < NUM_LIST; i++)
 	{
-		u64 rr = BUDDY_START_ADDR+VIRT_MEM_START_ADDR;	
-		u64 bu = FROM_PHY_TO_VIRT(BUDDY_START_ADDR);
-		u64 po = FROM_PHY_TO_VIRT(POOL_START_ADDR);
-		u64 bu_end = FROM_PHY_TO_VIRT(BUDDY_END_ADDR);
-		u64 bu_size = FROM_PHY_TO_VIRT(BUDDY_MEM_SIZE);
-		u64 po_end = FROM_PHY_TO_VIRT(POOL_END_ADDR);
-
 		page_size = PAGE_SIZE * (1 << i);
 		list = buddy->page_list[i];
 		sentinel = ll_sentinel(list);

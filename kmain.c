@@ -36,7 +36,7 @@ void kmain(multiboot_info_t* mbd, unsigned int magic, unsigned int init_data_add
 	static t_console_desc console_desc;
 	static t_ext2 ext2_d1;
 	static t_ext2 ext2_d2;
-	static u32 kernel_stack;
+	static u64 kernel_stack;
 	static t_ahci_device_desc* device_desc_ahci = NULL;
 	t_device_desc* device_desc = NULL;
 	system.time = 0;
@@ -48,13 +48,10 @@ void kmain(multiboot_info_t* mbd, unsigned int magic, unsigned int init_data_add
 	system.run_time_1 = 0;
 	device_num = 0;
 	
-	u64* xxx;
-	
 	init_data = init_data_add;
  	CLI
 	system.force_scheduling = 0;
 	system.process_info = &process_info;
-	//system.buddy_desc = &buddy_desc;
 	system.scheduler_desc = &scheduler_desc;
 	system.int_path_count = 0;
 	system.scheduler_desc->scheduler_queue[0] = 0;
@@ -64,21 +61,17 @@ void kmain(multiboot_info_t* mbd, unsigned int magic, unsigned int init_data_add
 	SWITCH_PAGE_DIR(system.master_page_pml4)
 	
 	init_kmallocs();
-	
-	xxx = kmalloc(24);
-	kfree(xxx);
-	
 	init_idt();
 	system.buddy_desc = buddy_init();
 	init_scheduler();
-	
 	system.timer_list = new_dllist();
 	init_ioapic();
 	init_lapic();
-	
 	init_kbc();
 	init_fb(mbd);
 	init_console(&console_desc, &draw_char_fb, &update_cursor_fb, 2, 0);
+	system.active_console_desc = &console_desc;
+	system.network_desc = network_init();
 	
 	device_desc = init_device(device_num, 2);
 	device_desc_ahci = init_ahci(device_desc);
@@ -86,13 +79,12 @@ void kmain(multiboot_info_t* mbd, unsigned int magic, unsigned int init_data_add
 	init_ext2(&ext2_d1,system.device_desc);
 	system.root_fs = &ext2_d1;
 	
-	system.active_console_desc = &console_desc;
 	i_desc.baseLow = ((u16) &syscall_handler) & 0xFFFF;
 	i_desc.selector = 0x8;
 	i_desc.flags = 0x0EF00; 
 	i_desc.baseHi = ((u16) &syscall_handler)>>0x10;
 	i_desc.baseExt=((u32)( &syscall_handler)) >> 0x020;
-    i_desc.pad=0;
+	i_desc.pad=0;
 	set_idt_entry(0x80,&i_desc);
 
 	system.process_info->sleep_wait_queue = new_dllist();	
@@ -132,12 +124,10 @@ void kmain(multiboot_info_t* mbd, unsigned int magic, unsigned int init_data_add
 	init_vm_process(process_context);
 	*(system.process_info->tss.ss) = 0x18;
 	*(system.process_info->tss.esp) = KERNEL_STACK;
-	system.network_desc = network_init();
-	//system.network_desc = NULL;
-	//system.timer_list = new_dllist();                       		
+	//system.network_desc = network_init();                  		
 	kernel_stack = KERNEL_STACK - 100;
-	asm volatile ("movl %0,%%ebp;"::"r"(kernel_stack));
-	asm volatile ("movl %0,%%esp;"::"r"(kernel_stack));
+	asm volatile ("mov %0,%%rbp;"::"r"(kernel_stack));
+	asm volatile ("mov %0,%%rsp;"::"r"(kernel_stack));
 	
 //	int i;
 //	for (i = 0; i < 25000; i++)

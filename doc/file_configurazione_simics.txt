@@ -1,4 +1,4 @@
-1) boot macchina
+1) /opt/simics/simics-qsp-x86-6.0.43/targets/qsp-x86/qsp-system.includeboot macchina
 /opt/simics/simics-qsp-x86-6.0.43/targets/qsp-x86/qsp-hdd-boot.simics
 
 

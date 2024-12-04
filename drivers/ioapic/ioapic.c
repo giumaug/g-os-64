@@ -12,21 +12,19 @@ void init_ioapic()
 	u32 offset;
 	u32 val;
 	
-	map_vm_mem(system.master_page_pml4, IOREGSEL, IOREGSEL, PAGE_SIZE, 3);
+//	map_vm_mem(system.master_page_pml4, IOREGSEL, IOREGSEL, PAGE_SIZE, 3);
+//	SWITCH_PAGE_DIR(system.master_page_pml4)
+	
 	ioregsel = IOREGSEL;
 	ioregwin = IOREGWIN;
-	for (i = 0; i < 46; i += 2) //23
+	for (i = 0; i < 46; i += 2)
 	{
-		//offset = 0x10 + 2 * i;
 		offset = 16 + i;
-		//val = REDTBL_LOW_ENTRY & (0x20 + (i / 2));
 		val = (32 + (i / 2));
 		write_reg(offset, val);
 		offset++;
 		write_reg(offset, REDTBL_HI_ENTRY);
 	}
-	//write_reg(16, 32);
-	//write_reg(17, 0);
 }
 
 void unmask_entry(u8 offset)

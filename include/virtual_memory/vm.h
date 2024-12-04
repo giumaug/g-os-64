@@ -23,13 +23,11 @@
 #define USER		        0b100
 #define SUPERUSER	    0b000    
 
-
 #define FROM_VIRT_TO_PHY(addr) addr-VIRT_MEM_START_ADDR+PHY_MEM_START_ADDR
 #define FROM_PHY_TO_VIRT(addr) addr+VIRT_MEM_START_ADDR-PHY_MEM_START_ADDR
 
 #define CHECK_MEM_REG(fault_addr,mem_reg) fault_addr>=mem_reg->start_addr && fault_addr<=mem_reg->end_addr 
 #define ALIGN_4K(address) ((u64)address & 0xFFFFFFFFFFFFF000LL)
-#define ALIGNED_TO_OFFSET(address, offset) ((u64)address + offset) - ((u64)address % offset);
 
 void* init_virtual_memory();
 void init_vm_process(struct t_process_context* process_context);

@@ -1,3 +1,5 @@
+#define KERNEL_STACK
+
 .global loader                  # making entry point visible to linker
 .global MULTIBOOT_INFO
 .global MULTIBOOT_MAGIC
@@ -129,7 +131,7 @@ tss_desc:
 .byte 0x89
 .byte 0x00
 .byte 0x00
-.byte 0x00							
+.byte 0x00
 .byte 0x00
 .byte 0x00
 .byte 0x00

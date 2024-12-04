@@ -19,13 +19,6 @@ void init_kmallocs()
 	unsigned int i;
 	void* mem_addr = NULL;
 	
-//	u64 _allocated_mem = ALLOCATED_MEM;
-//	u64 _buddy_struct_start_addr = STATIC_BUDDY_STRUCT_START_ADDR; //0x300000ULL * G_PHY_MEM_SIZE
-//	u64 _pool_start_addr = POOL_START_ADDR;
-//	u64 _mem_to_pool = MEM_TO_POOL; // x 16
-//	u64 _buddy_start_addr = BUDDY_START_ADDR;
-	
-
 	mem_addr = (u64) (POOL_START_ADDR + VIRT_MEM_START_ADDR - PHY_MEM_START_ADDR - MEM_TO_POOL);
 	//ALLOCATED POOL OF 4 8 16 32 64 128 256 512 1024 2048 4096 8192 16384 32768 65536 131072 BYTE
 	for (i = 0; i < POOL_NUM; i++)

@@ -257,7 +257,7 @@ void syscall_handler()
 		flush_inode_cache(system.root_fs);
 		break;	
 
-		default:
+		default:                                                                                   
 		panic();
 	}
 	if (syscall_num == 30 || syscall_num == 31 || syscall_num == 32 || syscall_num == 35)
@@ -269,7 +269,7 @@ void syscall_handler()
 	static struct t_process_context _current_process_context;                                                  	
 	static struct t_process_context _old_process_context;                                                      	
 	static struct t_process_context _new_process_context;	                                                        
-	static struct t_processor_reg _processor_reg;                                                                   
+	static struct t_processor_reg _processor_reg;                                                          
 	static unsigned int _action2; 
 	static u8 stop = 0;                                                                            
                                                                                                                      

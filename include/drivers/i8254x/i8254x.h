@@ -10,8 +10,9 @@
 #include "data_types/primitive_types.h"
 #include "network/common.h"
 
-#define I8254X_VIRT_BAR0_MEM    	0x80000
-#define I8254X_VIRT_BAR0_MEM_SIZE 	0x10000
+#define I8254X_VIRT_BAR0_MEM      0xF1000000
+//#define I8254X_VIRT_BAR0_MEM    	0x80000
+#define I8254X_VIRT_BAR0_MEM_SIZE   0x10000
 
 #define I8254X_BUS 				    0x0 						   //82567LF-2
 #define I8254X_SLOT 				0x19
@@ -117,7 +118,7 @@ t_tx_desc_i8254x;
 typedef struct s_i8254x
 {
 	u8 bar_type;
-	u32* mem_base;
+	u64* mem_base;
 	u32 mem_base_size;
 	u16 io_base;
 	u8 irq_line;
@@ -135,6 +136,5 @@ t_i8254x* init_8254x();
 void free_8254x(t_i8254x* i8254x);
 void int_handler_i8254x();
 void send_packet_i8254x(t_i8254x* i8254x,void* frame_addr,u16 frame_len);
-void testx();
 
 #endif

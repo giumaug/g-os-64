@@ -18,7 +18,7 @@ void process_0()
 	argv[0] = argv1;
 	argv[1] = NULL;	
 	
-    THREAD_FORK(pid);
+    //THREAD_FORK(pid);
 	if (pid == 0)
 	{
 		child_pid = _getpid();

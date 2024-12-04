@@ -8,8 +8,8 @@ out:
 # Verificare cosa succede disassemblando kernel.bin   
 #   push %edx
 #   push %eax
-	mov %edi,%edx # address
-	mov %esi,%eax # value
+    mov %edi,%eax # value
+	mov %esi,%edx # address
     out %al,%dx
 #   pop %eax
 #   pop %edx
@@ -33,8 +33,8 @@ outw:
  	mov    %rsp,%rbp
 #	push   %edx
 #	push   %eax
- 	mov    %edi,%edx  # address
- 	mov    %esi,%eax  # value
+ 	mov    %edi,%eax  # value
+ 	mov    %esi,%edx  # address
  	out    %ax,%dx
 #	pop    %eax
 #	pop    %edx
@@ -59,8 +59,8 @@ outdw:
  	mov    %rsp,%rbp
 #	push   %edx
 #	push   %eax
- 	mov    %edi,%edx  # address
- 	mov    %esi,%eax  # value
+ 	mov    %edi,%eax  # value
+ 	mov    %esi,%edx  # address
  	outl   %eax,%dx
 #	pop    %eax
 #	pop    %edx

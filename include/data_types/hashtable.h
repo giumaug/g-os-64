@@ -5,7 +5,7 @@
 #include "data_types/primitive_types.h"
 
 
-#define LOAD_FACTOR .75
+#define LOAD_FACTOR 75
 
 struct s_hashtable
 { 	

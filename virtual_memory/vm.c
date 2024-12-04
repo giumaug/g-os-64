@@ -5,8 +5,11 @@
 #include "scheduler/process.h"
 #include "virtual_memory/vm.h"
 
+void page_fault_handler();
+
 void* init_virtual_memory()
 {
+	static struct t_i_desc i_desc;
 	u32 i,y,z;
 	u32 dir_num;
 	u32 pages_index = 0;
@@ -15,15 +18,36 @@ void* init_virtual_memory()
 	u64* dir = MASTER_DIR;
 	u64* pages = MASTER_PAGES;
 	u64 mem_addr = 0;
+
+	i_desc.baseLow=(((u64)(&page_fault_handler)) & 0xFFFF);
+	i_desc.selector=0x8;
+	i_desc.flags=0x08e00;
+	i_desc.baseHi=(((u64)(&page_fault_handler)) >> 0x010);
+	i_desc.baseExt=(((u64)(&page_fault_handler)) >> (u64)0x020);
+	i_desc.pad=0;
+	set_idt_entry(0x0E,&i_desc);
 	
 	pml4[0] = ((u64) ptr) | PAGE_IN_MEMORY | PAGE_WRITE;
 	ptr[0] = ((u64) dir) | PAGE_IN_MEMORY | PAGE_WRITE;
 	
 	//Map 0 - end page table momory address
-	dir_num = (((STATIC_BUDDY_STRUCT_START_ADDR / 0x1000) + 1) / 0x200) + 1;
+	dir_num = (((MEM_START_ADDR / 0x1000) + 1) / 0x200) + 1;
 	for (y = 0; y < dir_num; y++)
     {
 		dir[y] = ((u64) pages) + pages_index | PAGE_IN_MEMORY | PAGE_WRITE;
+		for(z = 0; z < 512; z++)
+		{
+			pages[((pages_index / 8) + z)] = mem_addr | PAGE_IN_MEMORY | PAGE_WRITE;
+			mem_addr += PAGE_SIZE;
+		}
+		pages_index += PAGE_SIZE;
+	}
+	
+	//Map device reserved area
+	ptr[3] =  ((u64) dir) + (y * 4096) | PAGE_IN_MEMORY | PAGE_WRITE;
+	for (i = 384; i < 512; i++)
+	{
+		dir[i + (512 * 3)] = ((u64) pages) + pages_index | PAGE_IN_MEMORY | PAGE_WRITE;
 		for(z = 0; z < 512; z++)
 		{
 			pages[((pages_index / 8) + z)] = mem_addr | PAGE_IN_MEMORY | PAGE_WRITE;
@@ -75,6 +99,7 @@ void init_vm_process(struct t_process_context* process_context)
 	u64* master_page_dir = NULL;
 	u64* master_page_table = NULL;
 	struct t_process_context* current_process_context = NULL;
+	u32 dir_num = 0;
 	
 	page_pml4 = buddy_alloc_page(system.buddy_desc,0x1000);
 	buddy_clean_mem(page_pml4);
@@ -96,26 +121,29 @@ void init_vm_process(struct t_process_context* process_context)
 	master_page_dir = ALIGN_4K(FROM_PHY_TO_VIRT(((u64*)master_page_ptr)[0]));
 	master_page_table = ALIGN_4K(FROM_PHY_TO_VIRT(((u64*)master_page_dir)[0]));
 	
-	//-------Che uso map_vm_mem o faccio a mano dovrebbe essere la stessa cosa: da verificare
-	//map_vm_mem(page_dir,0,0,0x100000,3);
-	//page_table = FROM_PHY_TO_VIRT(((unsigned int*)page_dir)[0]);
 	
-	for (i = 0;i < 256;i++)
-	{
-		page_table[i] = master_page_table[i];
-	}
-	for (i = 256;i < 512;i++)
-	{
-		page_table[i] = 0;
+	
+	dir_num = (((MEM_START_ADDR / 0x1000) + 1) / 0x200) + 1;
+	
+	for (i = 0; i < dir_num; i++)
+    {
+		page_dir[i] = master_page_dir[i];
 	}
 	
-	page_pml4[0] = page_ptr;
-	page_ptr[0] = page_dir;
+//	for (i = 0;i < 256;i++)
+//	{
+//		page_table[i] = master_page_table[i];
+//	}
+//	for (i = 256;i < 512;i++)
+//	{
+//		page_table[i] = 0;
+//	}
+//	
 	for (i = 16; i < 16 + G_PHY_MEM_SIZE; i++)
 	{
-		page_ptr[i] = master_page_ptr;
+		page_ptr[i] = master_page_ptr[i];
 	}
-	page_dir[0] = page_table;
+	//page_dir[0] = page_table;
 	
 	map_vm_mem(page_pml4, (KERNEL_STACK-KERNEL_STACK_SIZE), process_context->phy_kernel_stack, KERNEL_STACK_SIZE, 3);
 	CURRENT_PROCESS_CONTEXT(current_process_context);
@@ -361,7 +389,7 @@ int map_vm_mem(u64* page_pml4, u64 vir_mem_addr, u64 phy_mem_addr, u64 mem_size,
 		}
 		else 
 		{
-			page_table = ALIGN_4K(FROM_PHY_TO_VIRT(((u64*)page_dir)[dir_num]));
+			page_dir = ALIGN_4K(FROM_PHY_TO_VIRT(((u64*)page_ptr)[dir_num]));
 		}
 		
 		phy_mem_addr -= 4096;
@@ -385,7 +413,7 @@ int map_vm_mem(u64* page_pml4, u64 vir_mem_addr, u64 phy_mem_addr, u64 mem_size,
 			}
 			else 
 			{
-				page_dir = ALIGN_4K(FROM_PHY_TO_VIRT(((u64*)page_ptr)[i]));
+				page_table = ALIGN_4K(FROM_PHY_TO_VIRT(((u64*)page_dir)[i]));
 			}
 			if (i == first_pd && pd_count > 1) 
 			{

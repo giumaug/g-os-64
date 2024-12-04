@@ -88,7 +88,7 @@
 				asm ("pop %rbx;");                                \
 				asm ("pop %rax;");
                 	                
-#define RET_FROM_INT_HANDLER 	asm("movq %rbp,%rsp;popq %rbp;iret");
+#define RET_FROM_INT_HANDLER 	asm("movq %rbp,%rsp;popq %rbp;iretq");
                     	
 #define SWITCH_TO_USER_MODE(stack_address)                                   \
                     asm("mov %0,%%rax;push %%rax;"::"r"(stack_address));    \

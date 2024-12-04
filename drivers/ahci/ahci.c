@@ -24,7 +24,7 @@ t_ahci_device_desc* init_ahci(t_device_desc* device_desc)
     u8 i;
     u32 pci_command;
     u32 pci_int_line;
-    char* phy_abar;
+    char* phy_abar = NULL;
     t_hba_port* port = NULL;
     t_hba_mem* mem = NULL;
     t_ahci_device_desc* device_desc_ahci = NULL;
@@ -52,12 +52,12 @@ t_ahci_device_desc* init_ahci(t_device_desc* device_desc)
     port_init(port, device_desc_ahci->mem_map, 0);
     device_desc_ahci->active_port = port;
     
-	i_desc.baseLow = ((u16) &int_handler_ahci) & 0xFFFF;
-	i_desc.selector = 0x8;
-	i_desc.flags = 0x08e00;
-	i_desc.baseHi = ((u16) &int_handler_ahci) >> 0x10;
-	i_desc.baseExt = ((u32)(&int_handler_ahci)) >> 0x020;
-	i_desc.pad = 0;
+	i_desc.baseLow=(((u64)(&int_handler_ahci)) & 0xFFFF);
+	i_desc.selector=0x8;
+	i_desc.flags=0x08e00;
+	i_desc.baseHi=(((u64)(&int_handler_ahci)) >> 0x010);
+	i_desc.baseExt=(((u64)(&int_handler_ahci)) >> (u64)0x020);
+	i_desc.pad=0;	
 	set_idt_entry(0x31, &i_desc);
 	
 	device_desc->dev = device_desc_ahci;
@@ -311,14 +311,14 @@ static void port_init(t_hba_port* port, t_hashtable* mem_map, u8 port_num)
     stop_cmd(port);
     addr = kmalloc(1024 + 1024);  
     algnd_addr = ALIGNED_TO_OFFSET(addr, 1024);
-    port->clb = FROM_VIRT_TO_PHY((u32) algnd_addr);
+    port->clb = FROM_VIRT_TO_PHY((u64) algnd_addr);
     port->clbu = 0; // to check address size
     kfillmem(algnd_addr, 0, 1024);
     hashtable_put(mem_map, algnd_addr, addr);
     
     addr = kmalloc(256 + 256);
     algnd_addr = ALIGNED_TO_OFFSET(addr, 256);
-    port->fb = FROM_VIRT_TO_PHY((u32) algnd_addr);
+    port->fb = FROM_VIRT_TO_PHY((u64) algnd_addr);
     port->fbu = 0; // to check address size
     kfillmem(algnd_addr, 0, 256);
     hashtable_put(mem_map, algnd_addr, addr);
