@@ -45,34 +45,43 @@ void static printk_char(char* text)
 	}
 }
 
+//We accept variadic function of the form f(char*,...) with max 5 variadic arguments of type char*
 void printk(char *text,...)
 {
-	int index=-1;
-	int param_index=0;
-	long long **param_val;
+	int index = -1;
+	int param_index = -1;
+	//long long **param_val;
 	int params[2];
 	struct t_process_context *current_process_context=system.process_info->current_process->val;
 	t_console_desc *console_desc=current_process_context->console_desc;
-
-	u32 xxx=&text;
-
+	void* var_params[6];
+	
+	GET_FROM_STACK_1(var_params[0]);
+	GET_FROM_STACK_2(var_params[1]);
+	GET_FROM_STACK_3(var_params[2]);
+	GET_FROM_STACK_4(var_params[3]);
+	GET_FROM_STACK_5(var_params[4]);
+	
 	while (text[++index]!='\0')
 	{
 		if (text[index]=='%' && text[index+1]=='d')
 		{
 			index+=2;
 			param_index++;
-			GET_FROM_STACK(param_index,param_val);
-			printk_num(*param_val);
+			if (param_index < 6)
+		    {
+				printk_num(var_params[param_index]);
+			}
 		}
 		if (text[index]=='%' && text[index+1]=='s')
 		{
 			index+=2;
 			param_index++;
-			GET_FROM_STACK(param_index,param_val);
-			printk_char((char*)*param_val);
+			if (param_index < 6)
+			{
+				printk_char((char*) var_params[param_index]);
+			}
 		}
-
 		_write_char_no_irq(console_desc,text[index]);
 	}
 }

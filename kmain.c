@@ -21,7 +21,7 @@ unsigned int seed=105491;
 extern unsigned int PAGE_DIR;
 t_system system;
 
-void kmain(multiboot_info_t* mbd, unsigned int magic, unsigned int init_data_add)
+void kmain(multiboot_info_t* mbd, u64 magic, u64 init_data_add)
 {
 	u32 device_num;
 	static multiboot_info_t _mbd;
@@ -57,11 +57,12 @@ void kmain(multiboot_info_t* mbd, unsigned int magic, unsigned int init_data_add
 	system.scheduler_desc->scheduler_queue[0] = 0;
 	system.process_info->current_process = NULL;
 	
+	init_idt();
 	system.master_page_pml4 = (void*)init_virtual_memory();
 	SWITCH_PAGE_DIR(system.master_page_pml4)
 	
 	init_kmallocs();
-	init_idt();
+	//init_idt();
 	system.buddy_desc = buddy_init();
 	init_scheduler();
 	system.timer_list = new_dllist();
@@ -71,7 +72,8 @@ void kmain(multiboot_info_t* mbd, unsigned int magic, unsigned int init_data_add
 	init_fb(mbd);
 	init_console(&console_desc, &draw_char_fb, &update_cursor_fb, 2, 0);
 	system.active_console_desc = &console_desc;
-	system.network_desc = network_init();
+	//system.network_desc = network_init();
+	system.network_desc = NULL;
 	
 	device_desc = init_device(device_num, 2);
 	device_desc_ahci = init_ahci(device_desc);
@@ -79,12 +81,12 @@ void kmain(multiboot_info_t* mbd, unsigned int magic, unsigned int init_data_add
 	init_ext2(&ext2_d1,system.device_desc);
 	system.root_fs = &ext2_d1;
 	
-	i_desc.baseLow = ((u16) &syscall_handler) & 0xFFFF;
-	i_desc.selector = 0x8;
-	i_desc.flags = 0x0EF00; 
-	i_desc.baseHi = ((u16) &syscall_handler)>>0x10;
-	i_desc.baseExt=((u32)( &syscall_handler)) >> 0x020;
-	i_desc.pad=0;
+	i_desc.baseLow=(((u64)(&syscall_handler)) & 0xFFFF);
+	i_desc.selector=0x8;
+	i_desc.flags=0x0EF00;
+	i_desc.baseHi=(((u64)(&syscall_handler)) >> 0x010);
+	i_desc.baseExt=(((u64)(&syscall_handler)) >> (u64)0x020);
+	i_desc.pad=0;	
 	set_idt_entry(0x80,&i_desc);
 
 	system.process_info->sleep_wait_queue = new_dllist();	
@@ -110,8 +112,8 @@ void kmain(multiboot_info_t* mbd, unsigned int magic, unsigned int init_data_add
 	process_context->processor_reg.rsp = NULL;
 	process_context->console_desc = &console_desc;
 	system.process_info->current_process = ll_prepend(system.scheduler_desc->scheduler_queue[9],process_context);
-	system.process_info->tss.ss = *init_data;
-	system.process_info->tss.esp = *(init_data+1);
+	system.process_info->tss.ss = NULL;
+	system.process_info->tss.esp = *init_data;
 	system.process_info->pause_queue = new_dllist();
 	process_context->phy_kernel_stack = FROM_VIRT_TO_PHY(buddy_alloc_page(system.buddy_desc,KERNEL_STACK_SIZE));
 	process_context->process_type = KERNEL_THREAD;
@@ -119,10 +121,13 @@ void kmain(multiboot_info_t* mbd, unsigned int magic, unsigned int init_data_add
 	process_context->socket_desc = hashtable_init(PROCESS_INIT_SOCKET);
 	process_context->next_sd = 0;
 	process_context->sig_num = 0;
-	 
-	process_context->page_pml4 = buddy_alloc_page(system.buddy_desc,0x1000);                      
+	
+	//buddy_check_mem(system.buddy_desc, 0xf102f000);
+	process_context->page_pml4 = buddy_alloc_page(system.buddy_desc,0x1000);
+	//buddy_check_mem(system.buddy_desc, 0xf102f000);
+	                    
 	init_vm_process(process_context);
-	*(system.process_info->tss.ss) = 0x18;
+	//*(system.process_info->tss.ss) = 0x18;
 	*(system.process_info->tss.esp) = KERNEL_STACK;
 	//system.network_desc = network_init();                  		
 	kernel_stack = KERNEL_STACK - 100;

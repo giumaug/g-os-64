@@ -59,6 +59,8 @@ int main()
 	listen(server_sockfd, 5);
 	char ch[100];
 	int pid;
+	
+	printf("server ht started \n");
 	while(1) 
 	{
 		age++;

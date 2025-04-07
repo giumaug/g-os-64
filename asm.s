@@ -1,5 +1,6 @@
 .global out,in,outw,inw,indw,outdw,adjust_kernel_stack,syscall
 
+.section .text
 # void out(unsigned char value,unsigned int address)
 out:
     push %rbp
@@ -77,4 +78,4 @@ indw:
  	inl    %dx,%eax
 #	pop    %edx
  	pop    %rbp
- 	ret         
+ 	ret

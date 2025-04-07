@@ -24,7 +24,7 @@ void syscall_handler()
 	unsigned int mem_size;
 	struct t_process_context* current_process_context;
 	struct t_processor_reg processor_reg;
-	int* params;
+	u64* params;
 	char data;
 	unsigned int on_exit_action;
 	u8 flush_network;
@@ -329,7 +329,7 @@ void syscall_handler()
 	}                                                                                                          	
 	else                                                                                                       	
 	{                                                                                                               
-		RESTORE_PROCESSOR_REG                                                                                   
+		RESTORE_PROCESSOR_REG                                                                           
 		RET_FROM_INT_HANDLER                                                                                    
 	}
 }

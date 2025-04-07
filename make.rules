@@ -7,5 +7,5 @@ LD		= ld
 #Switching to gcc 10.2.1 stabs symbols seems not to work with gdb 9.2.7 in interrupt context with local variable.
 #CFLAGS         = -O0 -ggdb -c -fno-builtin -m32
 #CFLAGS         = -O0 -g -c -fno-builtin -m32
-CFLAGS		= -O0 -gdwarf-4 -c -fno-builtin -fno-pie -mcmodel=large -fno-stack-protector -Wno-error=int-conversion -Wno-error=incompatible-pointer-types
+CFLAGS		= -O0 -gdwarf-4 -c -fno-builtin -fno-pie -mcmodel=large -fno-stack-protector -Wno-error=int-conversion -Wno-error=incompatible-pointer-types  -mno-sse
 CPPFLAGS	=-I $(INCLUDE) 

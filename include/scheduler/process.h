@@ -31,8 +31,8 @@ t_proc_status;
 
 struct t_tss 
 {
-	unsigned int* ss;
-	unsigned int* esp;
+	u64* ss;
+	u64* esp;
 };
 
 struct t_processor_reg 

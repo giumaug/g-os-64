@@ -748,16 +748,17 @@ void init_idt()
 {
 	int i;
 	
-//	for (i=0;i<255;i++)
-//	{
-//		idt[i].baseLow=(((u64)(&int_handler_generic)) & 0xFFFF);
-//		idt[i].selector=0x8;
-//		idt[i].flags=0x08e00;
-//		idt[i].baseHi=(((u64)(&int_handler_generic)) >> 0x010);
-//		idt[i].baseExt=(((u64)(&int_handler_generic)) >> (u64)0x020);
-//		idt[i].pad=0;
-//	}
-
+/*	
+	for (i=0;i<255;i++)
+	{
+		idt[i].baseLow=(((u64)(&int_handler_generic)) & 0xFFFF);
+		idt[i].selector=0x8;
+		idt[i].flags=0x08e00;
+		idt[i].baseHi=(((u64)(&int_handler_generic)) >> 0x010);
+		idt[i].baseExt=(((u64)(&int_handler_generic)) >> (u64)0x020);
+		idt[i].pad=0;
+	}
+*/
 
 	idt[0].baseLow=(((u64)(&int_handler_generic_0)) & 0xFFFF);
 	idt[0].selector=0x8;

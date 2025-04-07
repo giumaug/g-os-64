@@ -2,7 +2,7 @@
 
 int open(const char *fullpath, int flags)
 {
-	unsigned int params[3];
+	unsigned long params[3];
 
 	params[0]=fullpath;
 	params[1]=flags;
@@ -12,7 +12,7 @@ int open(const char *fullpath, int flags)
 
 void flush_inode_cache()
 {
-	unsigned int params[1];
+	unsigned long params[1];
 
 	SYSCALL(200, params);
 }

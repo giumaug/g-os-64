@@ -3,8 +3,9 @@
 
 #include "system.h"
 
-#define IOREGSEL 0xFEC00000
-#define IOREGWIN 0xFEC00010
+#define IOAPIC_PHY_ADDR 0xFEC00000
+#define IOREGSEL 0x30312000
+#define IOREGWIN 0x30312010
 #define IOREDTBL 0x2
 
 //See IOAPIC.PDF par 3.2.4

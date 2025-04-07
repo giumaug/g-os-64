@@ -3,7 +3,7 @@
 int exec(char* path,char* argv[]) 
 {
 	//make path and argv static!!!!!!
-	unsigned int params[3];
+	unsigned long params[3];
 	params[0]=path;
 	params[1]=argv;
 	SYSCALL(14,params);
@@ -12,7 +12,7 @@ int exec(char* path,char* argv[])
 
 int fork() 
 {
-	unsigned int params[2];
+	unsigned long params[2];
 	unsigned int ret;
 	params[0]=0;//ret val for child
 	SYSCALL(1,params);
@@ -32,14 +32,14 @@ int pause()
 
 int sleep(unsigned int time)
 {
-	unsigned int params[1];
+	unsigned long params[1];
 	params[0]=time;
 	SYSCALL(15,params);
 }
 
 int close(int fd)
 {
-	unsigned int params[2];
+	unsigned long params[2];
 
 	params[0]=fd;
 	SYSCALL(19,params);
@@ -48,7 +48,7 @@ int close(int fd)
 
 int read(int fd, void *buf, int count)
 {
-	unsigned int params[5];
+	unsigned long params[5];
 
 	params[0] = fd;
 	params[1] = buf;
@@ -60,7 +60,7 @@ int read(int fd, void *buf, int count)
 
 int write(int fd, void *buf, int count)
 {
-	unsigned int params[5];
+	unsigned long params[5];
 
 	params[0] = fd;
 	params[1] = buf;
@@ -72,7 +72,7 @@ int write(int fd, void *buf, int count)
 
 int chdir(char* path)
 {
-	unsigned int params[1];
+	unsigned long params[1];
 
 	params[0]=path;
 	SYSCALL(26,params);
@@ -81,7 +81,7 @@ int chdir(char* path)
 
 int lseek(int fd,int offset,int whence)
 {
-	unsigned int params[4];
+	unsigned long params[4];
 
 	params[0] = fd;
 	params[1] = offset;
@@ -92,7 +92,7 @@ int lseek(int fd,int offset,int whence)
 
 unsigned short getpid()
 {
-	unsigned int params[1];
+	unsigned long params[1];
 
 	SYSCALL(38,params);
 	return params[0];
@@ -100,7 +100,7 @@ unsigned short getpid()
 
 int getpgid(int pid)
 {
-	unsigned int params[2];
+	unsigned long params[2];
 
 	SYSCALL(39,params);
 	return params[1];
@@ -108,7 +108,7 @@ int getpgid(int pid)
 
 int setpgid(int pid,int pgid)
 {
-	unsigned int params[3];
+	unsigned long params[3];
 
 	params[0] = pid;
 	params[1] = pgid;
@@ -118,7 +118,7 @@ int setpgid(int pid,int pgid)
 
 int tcgetpgrp()
 {
-	unsigned int params[1];
+	unsigned long params[1];
 
 	SYSCALL(41,params);
 	return params[0];
@@ -126,7 +126,7 @@ int tcgetpgrp()
 
 int tcsetpgrp(int fg_pgid)
 {
-	unsigned int params[2];
+	unsigned long params[2];
 
 	params[0] = fg_pgid;
 	SYSCALL(42,params);
@@ -135,21 +135,21 @@ int tcsetpgrp(int fg_pgid)
 
 void read_test()
 {
-	unsigned int params[1];
+	unsigned long params[1];
 	SYSCALL(105,params);
 
 }
 
 void signal()
 {
-	unsigned int params[1];
+	unsigned long params[1];
 
 	SYSCALL(107,params);
 }
 
 void select_dev(int device_num)
 {
-	unsigned int params[1];
+	unsigned long params[1];
 
 	params[0] = device_num;
 	SYSCALL(108,params);	

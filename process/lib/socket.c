@@ -2,7 +2,7 @@
 
 int socket(int socket_family, int socket_type, int protocol)
 {
-	unsigned int params[2];
+    unsigned long params[2];
 
 	params[0]=socket_type;
 	SYSCALL(28,params);
@@ -12,7 +12,7 @@ int socket(int socket_family, int socket_type, int protocol)
 int bind(int sockfd, const struct sockaddr *addr,socklen_t addrlen)
 {
 	unsigned char* port;
-	unsigned int params[4];
+	unsigned long params[4];
 
 	port=&((struct sockaddr_in*) addr)->sin_port;
 	params[0]=sockfd;
@@ -24,7 +24,7 @@ int bind(int sockfd, const struct sockaddr *addr,socklen_t addrlen)
 
 int listen(int sockfd , int backlog)
 {
-	unsigned int params[2];
+	unsigned long params[2];
 
 	params[0] = sockfd;
 	SYSCALL(33,params);
@@ -33,7 +33,7 @@ int listen(int sockfd , int backlog)
 
 unsigned accept(int sockfd,struct sockaddr* address,int address_len)
 {
-	unsigned int params[4];
+	unsigned long params[4];
 
 	params[0] = sockfd;
 	params[1] = address;
@@ -45,7 +45,7 @@ unsigned accept(int sockfd,struct sockaddr* address,int address_len)
 
 int recvfrom(int sockfd, void* data,size_t data_len,int flags,struct sockaddr* addr,socklen_t* addrlen)
 {
-	unsigned int params[6];
+	unsigned long params[6];
 	unsigned char* ip;
 	unsigned char* port;
 
@@ -64,7 +64,7 @@ int recvfrom(int sockfd, void* data,size_t data_len,int flags,struct sockaddr* a
 
 int sendto(int sockfd,void* data,size_t  data_len, int flags,const struct sockaddr* addr, socklen_t addrlen)
 {
-	unsigned int params[6];
+	unsigned long params[6];
 	unsigned char* ip;
 	unsigned char* port;
 
@@ -82,7 +82,7 @@ int sendto(int sockfd,void* data,size_t  data_len, int flags,const struct sockad
 
 int connect(int sockfd, const struct sockaddr *address,socklen_t len)
 {
-	unsigned int params[5];
+	unsigned long params[5];
 	unsigned char* ip;
 	unsigned char* port;
 
@@ -99,7 +99,7 @@ int connect(int sockfd, const struct sockaddr *address,socklen_t len)
 //symbol conflict!!!
 int write_socket(int sockfd, void *buf, int count)
 {
-	unsigned int params[6];
+	unsigned long params[6];
 
 	params[0] = sockfd;
 	params[1] = 0;
@@ -113,7 +113,7 @@ int write_socket(int sockfd, void *buf, int count)
 //symbol conflict!!!
 int read_socket(int sockfd, void *buf, int count)
 {
-	unsigned int params[6];
+	unsigned long params[6];
 
 	params[0] = sockfd;
 	params[1] = 0;
@@ -127,7 +127,7 @@ int read_socket(int sockfd, void *buf, int count)
 //symbol conflict!!!
 int close_socket(int sockfd)
 {
-	unsigned int params[1];
+	unsigned long params[1];
 
 	params[0]=sockfd;
 	SYSCALL(32,params);
@@ -137,7 +137,7 @@ int close_socket(int sockfd)
 //custom system call to manage ping
 int ping(unsigned int dst_ip,unsigned short icmp_msg_id,unsigned short icmp_msg_seq)
 {
-	unsigned int params[4];
+	unsigned long params[4];
 
 	params[0] = dst_ip;
 	params[1] = icmp_msg_id;

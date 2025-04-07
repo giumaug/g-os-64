@@ -42,10 +42,12 @@ void int_handler_pit()
 	t_llist_node* node = NULL;
 	t_timer* timer = NULL;
 	struct t_processor_reg processor_reg;
+	struct t_processor_reg _processor_reg;
 
 	SAVE_PROCESSOR_REG
 	//EOI_TO_LAPIC
 	//SWITCH_DS_TO_KERNEL_MODE
+	_processor_reg=processor_reg;
 	counter++;
 	if (status == 1)
 	{
@@ -64,9 +66,11 @@ void int_handler_pit()
 	}
 
 	EOI_TO_LAPIC
+	RESTORE_PROCESSOR_REG                                                                                   	
+	RET_FROM_INT_HANDLER
 //-	EXIT_INT_HANDLER(0, processor_reg) 
                                                                     \
-                                                                                                                    
+/*                                                                                                              
 	static struct t_process_context _current_process_context;                                                  		
 	static struct t_process_context _old_process_context;                                                      		
 	static struct t_process_context _new_process_context;	                                                        
@@ -136,5 +140,6 @@ void int_handler_pit()
 	{                                                                                                               
 		RESTORE_PROCESSOR_REG                                                                                   	
 		RET_FROM_INT_HANDLER                                                                                	
-	}       
+	}
+*/      
 }

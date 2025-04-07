@@ -7,7 +7,7 @@
 #include "multiboot.h"
 #include "system.h"
 
-#define FB_VIRT_ADDR 0xF0000000
+#define FB_VIRT_ADDR 0x30000000
 #define FONT font9x18
 #define FONT_WIDTH 9
 #define FONT_HEIGHT 18

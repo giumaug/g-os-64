@@ -10,7 +10,7 @@
 #include "data_types/primitive_types.h"
 #include "network/common.h"
 
-#define I8254X_VIRT_BAR0_MEM      0xF1000000
+#define I8254X_VIRT_BAR0_MEM      0x30300000
 //#define I8254X_VIRT_BAR0_MEM    	0x80000
 #define I8254X_VIRT_BAR0_MEM_SIZE   0x10000
 

@@ -3,6 +3,8 @@
 
 #include "ext2/ext2.h"
 
+#define I_CACHE_LOAD_FACTOR 75
+
 struct s_inode;
 typedef struct s_element
 {
@@ -114,7 +116,7 @@ static void put_inode_cache(t_inode_cache* inode_cache,t_inode* inode)
 	element->inode = inode;
 	element->age = system.time;
 
-	if ((float) (inode_cache->map->elements + 1) / (float) inode_cache->map->size > LOAD_FACTOR) 
+	if ((long) ((inode_cache->map->elements + 1) * 100) / (long) inode_cache->map->size > I_CACHE_LOAD_FACTOR) 
 	{
 		flush_inode_cache(inode->ext2);
 	}

@@ -45,7 +45,7 @@ t_ahci_device_desc* init_ahci(t_device_desc* device_desc)
 	pci_int_line = read_pci_config_word(AHCI_PCI_BUS, AHCI_PCI_SLOT, AHCI_PCI_FUNC, AHCI_PCI_INT_LINE);
     pci_int_line |= 0x1;
 	write_pci_config_word(AHCI_PCI_BUS, AHCI_PCI_SLOT, AHCI_PCI_FUNC, AHCI_PCI_INT_LINE, pci_int_line);
-    map_vm_mem(system.master_page_pml4, AHCI_VIRT_MEM, ((u32) (phy_abar)), AHCI_VIRT_MEM_SIZE, 3);
+    map_vm_mem_static(AHCI_VIRT_MEM, ((u64) (phy_abar)), AHCI_VIRT_MEM_SIZE);
     
     device_desc_ahci->mem->ghc = device_desc_ahci->mem->ghc | 2;
     port = &(device_desc_ahci->mem->ports[0]);

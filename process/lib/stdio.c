@@ -9,7 +9,7 @@ void static print_num(unsigned int val)
 	char digit;
 	char _char_val[32];
 	char char_val[32];
-	int params[1];
+	unsigned long params[1];
 	
 	itoa (val,char_val,10);	
 	while (char_val[++index]!='\0') 
@@ -22,7 +22,7 @@ void static print_num(unsigned int val)
 void static print_char(char* text)
 {
 	int index=-1;
-	int params[1];
+	unsigned long params[1];
 	while (text[++index]!='\0')
 	{
 		params[0]=text[index];
@@ -33,28 +33,37 @@ void static print_char(char* text)
 void printf(char* text,...)
 {
 	int index=-1;
-	int param_index=0;
-	unsigned int** param_val;
-	int params[1];
+	int param_index=-1;
+	unsigned long params[1];
 	int sys_num=4;
-
+	void* var_params[6];
+	
+	GET_FROM_STACK_1(var_params[0]);
+	GET_FROM_STACK_2(var_params[1]);
+	GET_FROM_STACK_3(var_params[2]);
+	GET_FROM_STACK_4(var_params[3]);
+	GET_FROM_STACK_5(var_params[4]);
+	
 	while (text[++index]!='\0')
 	{
 		if (text[index]=='%' && text[index+1]=='d')
 		{
 			index+=2;
 			param_index++;
-			GET_FROM_STACK(param_index,param_val);
-			print_num(*param_val);
-
+			if (param_index < 6)
+			{
+				print_num(var_params[param_index]);
+			}
 		}
 		else if (text[index]=='%' && text[index+1]=='s')
 		{
 			index+=2;
 			param_index++;
-			GET_FROM_STACK(param_index,param_val);
-			print_char(*param_val);
-
+			
+			if (param_index < 6)
+			{
+				print_char((char*) var_params[param_index]);
+			}
 		}
 		params[0]=text[index];
 		SYSCALL(4,params);
@@ -65,7 +74,7 @@ void scanf(char *text,void *val)
 {
 	char data;
 	char char_val[100];
-	int params[2];
+	unsigned long params[2];
 	int index=0;
 	unsigned int i=0;
 
@@ -109,16 +118,13 @@ void scanf(char *text,void *val)
 int getc()
 {
 	char data;
-	int params[1];
+	unsigned long params[1];
 
 	SYSCALL(7,NULL);
 	
 	params[0]=&data;
 	SYSCALL(5,params);
-	
-//	params[0]=data;
-//	SYSCALL(6,params);
-	
+		
 	if (data=='\b') 
 	{
 		SYSCALL(10,NULL);
@@ -136,7 +142,7 @@ int getc()
 
 int remove(const char *filename)
 {
-	unsigned int params[2];
+	unsigned long params[2];
 
 	params[0]=filename;
 	SYSCALL(22,params);

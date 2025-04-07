@@ -8,7 +8,7 @@
 #define PHY_MEM_START_ADDR  0x100000ULL
 #define PAGE_TABLE_ENTRY HIGH_MEM_LIMIT / 0x1000ULL
 #define PAGE_DIR_ENTRY PAGE_TABLE_ENTRY / 0x400ULL
-#define PROC_VIRT_MEM_START_ADDR 0x100000ULL    	//1M - 8G
+#define PROC_VIRT_MEM_START_ADDR 0x40000000ULL    	//1G - 8G
 #define HEAP_VIRT_MEM_START_ADDR 0x200000000ULL  	//8G - 16G
 #define HEAP_INIT_SIZE 0x200000ULL
 #define KERNEL_STACK 0x3FFCFF000ULL        			//16G - 3M - 4k hole; size = 0x2000
@@ -36,6 +36,7 @@ int map_vm_mem(u64* page_pml4, u64 vir_mem_addr, u64 phy_mem_addr, u64 mem_size,
 int umap_vm_mem(u64* page_pml4, u64 virt_mem_addr, u64 mem_size, u32 flush);
 void* clone_vm_process(void* parent_page_pml4,u64 process_type, u64 kernel_stack_addr);
 void free_vm_process_user_space(struct t_process_context* process_context);
+int map_vm_mem_static(u64 vir_mem_addr, u64 phy_mem_addr, u64 mem_size);
 
 #endif
 

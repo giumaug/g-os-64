@@ -16,9 +16,18 @@ void process_0()
 	static char argv1[] = "/shell";	
 	
 	argv[0] = argv1;
-	argv[1] = NULL;	
+	argv[1] = NULL;
+	pid = 0;
 	
     //THREAD_FORK(pid);
+    
+//--------------    
+    unsigned int params[1];
+    params[0]=pid;
+    SYSCALL(1L,params);
+    pid=params[0];
+//----------------------
+    
 	if (pid == 0)
 	{
 		child_pid = _getpid();
@@ -28,9 +37,13 @@ void process_0()
 	}
 	else 
 	{
-		THREAD_EXIT(0);
+		//THREAD_EXIT(0);
+		params[0]=0;       
+        SYSCALL(13L,params);   
 	}
-	THREAD_EXIT(0);
+	//THREAD_EXIT(0);
+	params[0]=0;       
+    SYSCALL(13L,params);
 }
 
 t_console_desc* console_desc = NULL;

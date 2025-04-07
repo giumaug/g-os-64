@@ -3,9 +3,9 @@
 #include "debug.h"
 #include "timer.h"
 
-unsigned int collect_mem=0;
-// original unsigned int collected_mem[50005];
-unsigned int collected_mem[1000];
+unsigned int collect_mem=1;
+u64 collected_mem[50005];
+//u64 collected_mem[1000];
 unsigned int collected_mem_index=0;
 unsigned int allocated_block=0;
 unsigned int start_count = 0;
@@ -128,7 +128,7 @@ void __check_process_context(int val)
 	}
 }
 
-void _is_phy_page_used(unsigned int phy_page_addr)
+void _is_phy_page_used(u64 phy_page_addr)
 {
 	u32 i = 0;
 	u32 page_addr;
@@ -144,7 +144,7 @@ void _is_phy_page_used(unsigned int phy_page_addr)
 	}
 }
 
-void _collect_mem_alloc(unsigned int page_addr)
+void collect_mem_alloc(u64 page_addr)
 {
 	unsigned int i=0;
 
@@ -152,14 +152,14 @@ void _collect_mem_alloc(unsigned int page_addr)
 	{
 		for (i = collected_mem_index; i < 50000;i++)
 		{
-			if (collected_mem[collected_mem_index] == page_addr)
+			if (collected_mem[i] == page_addr)
 			{
 				panic();
 			}
 		}
 		for (i = 0; i < collected_mem_index;i++)
 		{
-			if (collected_mem[collected_mem_index] == page_addr)
+			if (collected_mem[i] == page_addr)
 			{
 				panic();
 			}
@@ -175,7 +175,7 @@ void _collect_mem_alloc(unsigned int page_addr)
 	}
 }
 
-void collect_mem_alloc(unsigned int mem_addr)
+void _collect_mem_alloc(u64 mem_addr)
 {
 	int i;
 	static int not_init = 0;
@@ -204,7 +204,7 @@ void collect_mem_alloc(unsigned int mem_addr)
 	collected_mem[collected_mem_index] = mem_addr;
 }
 
-void collect_mem_free(unsigned int page_addr)
+void collect_mem_free(u64 page_addr)
 {
 	int found = 0;
 	unsigned int i = 0;
@@ -222,7 +222,7 @@ void collect_mem_free(unsigned int page_addr)
 		}
 		if (found == 0) 
 		{
-			//panic();
+			panic();
 		}
 	}
 }

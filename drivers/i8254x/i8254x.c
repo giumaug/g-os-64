@@ -175,8 +175,7 @@ t_i8254x* init_8254x()
 		i8254x->mem_base=I8254X_VIRT_BAR0_MEM;
 		i8254x->io_base=NULL;
 		i8254x->bar_type=0;
-		map_vm_mem(system.master_page_pml4,I8254X_VIRT_BAR0_MEM,(((u64) (bar0)) & 0xFFFFFFF0),I8254X_VIRT_BAR0_MEM_SIZE,3);
-		//SWITCH_PAGE_DIR(FROM_VIRT_TO_PHY((system.master_page_pml4)))
+		map_vm_mem_static(I8254X_VIRT_BAR0_MEM,(((u64) (bar0)) & 0xFFFFFFF0),I8254X_VIRT_BAR0_MEM_SIZE);
 	}
 
 	i8254x->irq_line=read_pci_config_word(I8254X_BUS,I8254X_SLOT,I8254X_FUNC,I8254X_IRQ_LINE-3) & 0xFF;

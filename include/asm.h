@@ -2,13 +2,26 @@
 #define ASM_H
 
 #include "system.h"
-
-#define GET_FROM_STACK(n,var) asm("mov %%rbp,%0;":"=r"(var));var+=n+2;
+     
+#define GET_FROM_STACK_1(var) asm("mov %%rsi,%0;":"=r"(var))                                                    
+#define GET_FROM_STACK_2(var) asm("mov %%rdx,%0;":"=r"(var))                                                                  
+#define GET_FROM_STACK_3(var) asm("mov %%rcx,%0;":"=r"(var))                                  
+#define GET_FROM_STACK_4(var) asm("mov %%r8,%0;":"=r"(var))                                                                 
+#define GET_FROM_STACK_5(var) asm("mov %%r9,%0;":"=r"(var))                               
+							                              
+									
 #define STI asm ("sti");
 #define CLI asm ("cli");
-#define EXIT_SYSCALL_HANDLER asm("pop %rbp;iret;");
+#define EXIT_SYSCALL_HANDLER asm("pop %rbp;iretq;");
 
-#define SAVE_PROCESSOR_REG asm("push %rbp");                           \
+#define SAVE_PROCESSOR_REG asm("push %r8");                            \
+				asm("push %r9");                                      \
+				asm("push %r10");                                     \
+				asm("push %r11");                                     \
+				asm("push %r12");                                     \
+				asm("push %r14");                                     \
+				asm("push %r15");                                     \
+				asm("push %rbp");                                     \
                 asm("push %rdi");                                     \
                 asm("push %rsi");                                     \
                 asm("push %rdx");                                     \
@@ -43,9 +56,10 @@
                 asm("movq %%r14, %0;":"=r"(processor_reg.r14));        \
                 asm("pop %r15");                                      \
                 asm("movq %%r15, %0;":"=r"(processor_reg.r15));
-                
+                 
 // PUSH AND POP REGITERS ON STACK TO AVIOD INLINE ASM DIRTIES THEM
-#define RESTORE_PROCESSOR_REG	asm ("mov %0,%%rsp;"::"r"(_processor_reg.rsp)); \
+#define RESTORE_PROCESSOR_REG asm volatile ("" ::: "memory"); \
+                asm ("mov %0,%%rsp;"::"r"(_processor_reg.rsp)); \
                 asm ("movq %0,%%rax;"::"r"(_processor_reg.rax));  \
                 asm ("push %rax;");                              \
                 asm ("movq %0,%%rbx;"::"r"(_processor_reg.rbx));  \
@@ -61,18 +75,19 @@
                 asm ("movq %0,%%r8;"::"r"(_processor_reg.r8));    \
                 asm ("push %r8;");                               \
                 asm ("movq %0,%%r9;"::"r"(_processor_reg.r9));    \
-                asm ("push %r10;");                              \
+                asm ("push %r9;");                     \
                 asm ("movq %0,%%r10;"::"r"(_processor_reg.r10));  \
-                asm ("push %r11;");                              \
+                asm ("push %r10;");                              \
                 asm ("movq %0,%%r11;"::"r"(_processor_reg.r11));  \
-                asm ("push %r12;");                              \
+                asm ("push %r11;");                              \
                 asm ("movq %0,%%r12;"::"r"(_processor_reg.r12));  \
-                asm ("push %r13;");                              \
+                asm ("push %r12;");                              \
                 asm ("movq %0,%%r13;"::"r"(_processor_reg.r13));  \
-                asm ("push %r14;");                              \
+                asm ("push %r13;");                              \
                 asm ("movq %0,%%r14;"::"r"(_processor_reg.r14));  \
-                asm ("push %r15;");                              \
-                asm ("movq %0,%%r15"::"r"(_processor_reg.r15));
+                asm ("push %r14;");                              \
+                asm ("movq %0,%%r15"::"r"(_processor_reg.r15));\
+                asm ("push %r15;");                               \
                 asm ("pop %r15;");                                \
                 asm ("pop %r14;");                                \
                 asm ("pop %r13;");                                \
@@ -91,14 +106,16 @@
 #define RET_FROM_INT_HANDLER 	asm("movq %rbp,%rsp;popq %rbp;iretq");
                     	
 #define SWITCH_TO_USER_MODE(stack_address)                                   \
+                    asm("mov $0x23,%rax;	      	   			            \
+        				push %rax;");                                       \
                     asm("mov %0,%%rax;push %%rax;"::"r"(stack_address));    \
                     asm("mov $0x206,%rax;                                   \
                          push %rax;                                         \
-                         mov $0x13,%eax;      /*cs*/                        \
+                         mov $0x1b,%rax;      /*cs*/                        \
                          push %rax;                                         \
-                         mov $0x100000,%eax;  /*eip*/                       \
+                         mov $0x40000000,%rax;  /*eip*/                       \
                          push %rax;                                         \
-                         iret;");
+                         iretq;");
 
 //IN ORDER TO PROTECT EAX I NEED BOTH TO PUSH AND POP IT ON STACK AND HITS ABOUT IT ASM INLNE
 //ASM INLINE DOSN'T KNOW REGARDING FINAL POP
@@ -144,11 +161,21 @@
                               pop %rax;                             \
                              ");
 					
-#define RET_FROM_INT_HANDLER_FLUSH asm("		                        \
-                    movq %rbp,%rsp;	                                \
-                    popq %rbp;                                      \
-                    sub $4,%rbp,%rbp;	                            \	                                \
-                    iret;		                                    \
+//#define RET_FROM_INT_HANDLER_FLUSH asm("		                        \
+//                    movq %rbp,%rsp;	                                \
+//                    popq %rbp;                                      \
+//                    sub $8,%rbp,%rbp;	                            \	                                \
+//                    iretq;		                                    \
+//					");
+
+#define RET_FROM_INT_HANDLER_FLUSH asm("		\
+					movq %rbp,%rsp;	\
+					pop %rbp;	\
+					.lcomm TMPX,8;	\
+					movabs %rax,TMPX;	\
+					pop %rax;	\
+					movabs TMPX,%rax;	\
+					iret;		\
 					");
 
 #define HALT asm("sti;hlt");

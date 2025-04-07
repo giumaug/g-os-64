@@ -54,7 +54,7 @@ void itoa (unsigned int val,char *char_val,unsigned int base)
 
 void exit(int status)
 {
-	int params[1];
+	unsigned long params[1];
 	params[0]=status;
 	SYSCALL(13,params);
 	return;

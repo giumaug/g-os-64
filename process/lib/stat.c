@@ -2,7 +2,7 @@
 
 int mkdir(const char* fullpath)
 {
-	unsigned int params[1];
+	unsigned long params[1];
 
 	params[0] = fullpath;
 	SYSCALL(23, params);

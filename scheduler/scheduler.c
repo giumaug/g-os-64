@@ -428,8 +428,8 @@ u32 _exec(char* path,char* argv[])
 	struct t_process_context* current_process_context;
 	char** bk_area;
 	u32 data_size;
-	u32* stack_pointer;
-	u32* stack_data_pointers;
+	u64* stack_pointer;
+	u64* stack_data_pointers;
 	char* page_addr;
 	char* stack_data;
 	u32 argc = 0;
@@ -498,7 +498,7 @@ u32 _exec(char* path,char* argv[])
 		current_process_context->ustack_mem_reg = create_mem_reg(USER_STACK-USER_STACK_INIT_SIZE,USER_STACK);
 		page_addr = buddy_alloc_page(system.buddy_desc,PAGE_SIZE);
 		map_vm_mem(current_process_context->page_pml4,(USER_STACK-PAGE_SIZE),FROM_VIRT_TO_PHY(page_addr),PAGE_SIZE,7);
-		system.buddy_desc->count[BLOCK_INDEX_FROM_PHY(FROM_VIRT_TO_PHY((unsigned int)page_addr))]++;
+		system.buddy_desc->count[BLOCK_INDEX_FROM_PHY(FROM_VIRT_TO_PHY((u64)page_addr))]++;
 		SWITCH_PAGE_DIR(FROM_VIRT_TO_PHY((current_process_context->page_pml4))) 
 	}
 	else
@@ -509,7 +509,7 @@ u32 _exec(char* path,char* argv[])
 	}
 	current_process_context->process_type = USERSPACE_PROCESS;
 
-	frame_size = 4*(argc+4)+data_size;
+	frame_size = 8*(argc+4)+data_size;
 	frame_size += 16; //pad
 	stack_pointer = USER_STACK - frame_size;
 
@@ -519,7 +519,7 @@ u32 _exec(char* path,char* argv[])
 	*(stack_pointer + 0) = NULL;
 	*(stack_pointer + 1) = argc;
 	*(stack_pointer + 2) = stack_data_pointers;
-	*(stack_pointer +3 ) = NULL;
+	*(stack_pointer + 3) = NULL;
 	
 	z = k = j = 0;
 	for(i = 0;i < argc;i++)
@@ -531,7 +531,7 @@ u32 _exec(char* path,char* argv[])
 			k++;
 		}
 		stack_data[j++] = '\0';
-		*(stack_data_pointers+i) = ((u32) stack_data) + z;
+		*(stack_data_pointers+i) = ((u64) stack_data) + z;
 		z = j;
 	}
 
@@ -540,7 +540,19 @@ u32 _exec(char* path,char* argv[])
 		kfree(bk_area[k]);
 	}
 	kfree(bk_area);
-	SWITCH_TO_USER_MODE(stack_pointer)
+//--	SWITCH_TO_USER_MODE(stack_pointer)
+      //asm("mov $0x3FFCFF000, %rsp");
+    asm("mov $0x23,%rax;	      	   			            \
+           push %rax;");                
+      asm("mov	%ax,%ds;mov	%ax,%es;"); 
+	  asm("mov %0,%%rax;push %%rax;"::"r"(stack_pointer));
+      asm("mov $0x206,%rax;                                   \
+           push %rax;                                         \
+           mov $0x1b,%rax;      /*cs*/                        \
+           push %rax;                                         \
+           mov $0x40000000,%rax;  /*eip*/                       \
+           push %rax;");
+     asm("iretq;");
 	return 0;
 }
 

@@ -147,11 +147,6 @@ void hashtable_put(t_hashtable* hashtable,u32 key,void* value)
 	u32 index;
 	t_bucket_data* bucket_data;
 	
-	long a1 = hashtable->elements;
-	long a2 = hashtable->size;
-	long a3 = a1 / a2;
-	long a4 = LOAD_FACTOR;
-	
 	if ((long)((hashtable->elements+1)*100)/(long)hashtable->size>LOAD_FACTOR)
 	{
 		rehash(hashtable);

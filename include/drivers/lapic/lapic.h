@@ -3,7 +3,8 @@
 
 #include "system.h"
 
-#define LAPIC_BASE 0xfee00000
+#define LAPIC_BASE 0x30313000
+#define PHY_LAPIC_BASE 0xFEE00000
 #define LAPIC_ID 0x20
 #define LAPIC_DFR  0x00e0
 #define LAPIC_LDR  0x00d0

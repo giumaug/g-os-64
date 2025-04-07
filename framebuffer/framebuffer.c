@@ -6,7 +6,7 @@ static u32 fb_width;
 static u32 fb_height;
 static u32 fb_bpp;
 static u32 fb_bytes;
-static u32 fb_size;
+static u64 fb_size;
 static u32 fb_text_width;
 static u32 fb_text_height;
 static u32 fb_text_area;
@@ -28,7 +28,7 @@ void init_fb(multiboot_info_t* mbd)
 	fb_text_area = fb_text_width * fb_text_height;
 
 	fb_size = fb_width * fb_height * fb_bytes;
-	map_vm_mem(system.master_page_pml4, fb_virt_addr, fb_phy_addr, (fb_size + PAGE_SIZE), 7);
+	map_vm_mem_static(fb_virt_addr, fb_phy_addr, (fb_size + PAGE_SIZE));
 	
 	for (i = 0; i < fb_size; i++)
 	{

@@ -8,6 +8,9 @@ static unsigned int mem;
 static void buddy_reset_block(void* address,unsigned int page_size);
 static void buddy_init_mem(t_buddy_desc* buddy);
 static void fill_buddy(t_buddy_desc* buddy, unsigned int num_list, u64 mem_addr, unsigned int num_block);
+void buddy_check_mem(t_buddy_desc* buddy, u64 mem_addr_to_check);
+
+static int global_page_counter = 0;
 
 t_buddy_desc* buddy_init()
 {
@@ -20,9 +23,20 @@ t_buddy_desc* buddy_init()
 	u64* mem_addr_bucket = NULL;
 	int i,j;
 	
+	//u64 yyy = MAX_PAGE_SIZE;
+	//u64 xxx = ALIGNED_TO_OFFSET((MEM_START_ADDR + (ALLOCATED_MEM / 10)), MAX_PAGE_SIZE);
+	
+	u64 _allocated_mem = ALLOCATED_MEM; 
+    u64 _pool_start_addr = POOL_START_ADDR; 
+    u64 _pool_end_addr = POOL_END_ADDR;
+    u64 _mem_to_pool = MEM_TO_POOL; 
+    u64 _buddy_start_addr = BUDDY_START_ADDR;
+    u64 _buddy_end_addr = BUDDY_END_ADDR; 
+    u64 _buddy_mem_size = BUDDY_MEM_SIZE;
+	
 	buddy = VIRT_MEM_START_ADDR - PHY_MEM_START_ADDR + STATIC_BUDDY_STRUCT_START_ADDR;
 	mem_addr = BUDDY_START_ADDR;
-	max_page_size = PAGE_SIZE * (1 << (NUM_LIST - 1));
+	max_page_size = MAX_PAGE_SIZE;
 	
 	for (i = 0; i < NUM_LIST; i++) 
 	{
@@ -39,7 +53,7 @@ t_buddy_desc* buddy_init()
 		buddy->count[BLOCK_INDEX(mem_addr)] = 0;
 		mem_addr += max_page_size;
 		//AHCI + 8254x memory
-		if (mem_addr = 0xF1000000)
+		if (mem_addr == 0xF1000000)
 		{
 			fill_buddy(buddy, 4, 0xF1010000, 1);
 			fill_buddy(buddy, 0, 0xF1022000, 14);
@@ -84,6 +98,15 @@ static void fill_buddy(t_buddy_desc* buddy, unsigned int num_list, u64 mem_addr,
 		buddy->page_list_ref[BLOCK_INDEX(mem_addr)] = 0;
 		buddy->count[BLOCK_INDEX(mem_addr)] = 0;
 		mem_addr += block_size;
+		if (mem_addr == 0xf102f000)
+		{
+			global_page_counter++;
+		}
+		if (global_page_counter == 2)
+		{
+			global_page_counter = 0;
+			panic();
+		}
 	}
 }
 	
@@ -102,7 +125,8 @@ void* buddy_alloc_page(t_buddy_desc* buddy, u64 mem_size)
 	int y;
 	
 	SAVE_IF_STATUS
-	CLI	
+	CLI
+	//buddy_check_mem(system.buddy_desc, 0xf102f000);
 	for (list_index = 0; list_index < NUM_LIST; list_index++) 
 	{	
 		if (PAGE_SIZE * (1 << list_index) >= mem_size) break;
@@ -120,7 +144,6 @@ void* buddy_alloc_page(t_buddy_desc* buddy, u64 mem_size)
 			next_list_index++;
 		}
 	}
-//	buddy_free_mem(buddy);
 	if (list_found == 0)
 	{
 		printk("run out of buddy memory!!!");
@@ -134,6 +157,10 @@ void* buddy_alloc_page(t_buddy_desc* buddy, u64 mem_size)
 		page_size = PAGE_SIZE * (1 << next_list_index);
         for ( i = (next_list_index-1); i >= (int)list_index; i--)
 		{
+			if ((page_addr + page_size) == 0xf102f000)
+			{
+				panic();
+			}
 			page_size /= 2;
 			mem_addr_bucket = kmalloc(sizeof(u64));
 			*mem_addr_bucket = page_addr + page_size;
@@ -148,11 +175,10 @@ void* buddy_alloc_page(t_buddy_desc* buddy, u64 mem_size)
 	system.buddy_desc->count[BLOCK_INDEX((u64)page_addr)] = 0;
 	new_mem_addr = page_addr + VIRT_MEM_START_ADDR;
 	
-//	if (collect_mem == 1)
-//	{
-//		collect_mem_alloc(new_mem_addr);
-//	}
-	
+	if (collect_mem == 1)
+	{
+		collect_mem_alloc(new_mem_addr);
+	}
 	RESTORE_IF_STATUS
 	return new_mem_addr;
 }
@@ -176,13 +202,18 @@ void buddy_free_page(t_buddy_desc* buddy,void* to_free_page_addr)
 	CLI	
 	page_addr = to_free_page_addr;
 
-//	if (collect_mem == 1)
-//	{
-//		collect_mem_free(page_addr);
-//	}
+	if (collect_mem == 1)
+	{
+		collect_mem_free(page_addr);
+	}
 
-	//page_addr -= (BUDDY_START_ADDR + VIRT_MEM_START_ADDR);
 	page_addr -= VIRT_MEM_START_ADDR;
+	
+	if (page_addr == 0xf102a000)
+	{
+			page_addr = 0xf102a000;
+	}
+	
 	if ((buddy->order[BLOCK_INDEX(page_addr)] & 16) == 0)
 	{
 		panic();
@@ -329,5 +360,44 @@ static void buddy_reset_block(void* address,unsigned int page_size)
 	for (i = 0; i < page_size; i++)
 	{
 		*(unsigned char*)(address+i) = 0xFF;
+	}
+}
+
+void buddy_check_mem(t_buddy_desc* buddy, u64 mem_addr_to_check)
+{
+	int counter = 0;
+	
+	t_llist* list = NULL;
+	t_llist_node* next = NULL;
+	t_llist_node* sentinel = NULL;
+	u64* val = NULL;
+	unsigned int i;
+	unsigned int y;
+	u64 page_size;
+	t_llist_node* next_tmp = NULL;
+	u64 mem_addr;
+
+	for ( i = 0; i < NUM_LIST; i++)
+	{
+		page_size = PAGE_SIZE * (1 << i);
+		list = buddy->page_list[i];
+		sentinel = ll_sentinel(list);
+		next = ll_first(list);
+		next_tmp = ll_next(next);
+		while(next != sentinel)
+		{
+			val = next->val;
+			mem_addr = (u64) *val;
+			if (mem_addr_to_check == mem_addr)
+			{
+				panic();
+				counter++;
+			}
+			next=ll_next(next);
+		}
+	}
+	if (counter > 1)
+	{
+		panic();
 	}
 }

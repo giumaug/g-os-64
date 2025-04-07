@@ -10,9 +10,9 @@ u32 elf_loader_init(t_elf_desc* elf_desc,char* path)
  	unsigned char* process_space = NULL;
 	int fd;
 	unsigned int process_size;
-	Elf32_Ehdr* elf_header = NULL;
-	Elf32_Phdr* elf_prg_header = NULL;
-	Elf32_Shdr* elf_sct_header = NULL;
+	Elf64_Ehdr* elf_header = NULL;
+	Elf64_Phdr* elf_prg_header = NULL;
+	Elf64_Shdr* elf_sct_header = NULL;
 	t_ext2* ext2 = NULL;
 	t_stat* stat = NULL;
 
@@ -34,14 +34,14 @@ u32 elf_loader_init(t_elf_desc* elf_desc,char* path)
 		return -1;
 	}
 	
-	elf_header = kmalloc(sizeof(Elf32_Ehdr));
-	_read(ext2,fd,elf_header,sizeof(Elf32_Ehdr),0);
-	elf_prg_header = kmalloc(sizeof(Elf32_Phdr)*elf_header->e_phnum);
+	elf_header = kmalloc(sizeof(Elf64_Ehdr));
+	_read(ext2,fd,elf_header,sizeof(Elf64_Ehdr),0);
+	elf_prg_header = kmalloc(sizeof(Elf64_Phdr)*elf_header->e_phnum);
 	_seek(ext2,fd,elf_header->e_phoff,SEEK_SET);
 
 	for (i = 0;i < elf_header->e_phnum;i++)
 	{
-		_read(ext2,fd,&elf_prg_header[i],sizeof(Elf32_Phdr),0);
+		_read(ext2,fd,&elf_prg_header[i],sizeof(Elf64_Phdr),0);
 		if (elf_prg_header[i].p_type == PT_LOAD)
 		{
 			elf_desc->file_desc = fd;
@@ -71,7 +71,7 @@ u32 elf_loader_free(t_elf_desc* elf_desc)
 	}
 }
 
-u32 elf_loader_read(t_elf_desc* elf_desc,u32 fault_addr,u32 page_addr)
+u32 elf_loader_read(t_elf_desc* elf_desc,u64 fault_addr,u64 page_addr)
 {
 	u32 offset;
 	t_ext2* ext2 = NULL;

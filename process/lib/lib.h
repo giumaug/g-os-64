@@ -3,7 +3,12 @@
 
 #define NULL 0L
 #define SYSCALL(syscall_num,params) asm("mov %0,%%eax;mov %1,%%rcx;int $0x80"::"r"(syscall_num),"r"(params):"%eax","%rcx");
-#define GET_FROM_STACK(n,var) asm("mov %%rbp,%0;":"=r"(var));var+=n+2;
+#define GET_FROM_STACK_1(var) asm("mov %%rsi,%0;":"=r"(var))                                                    
+#define GET_FROM_STACK_2(var) asm("mov %%rdx,%0;":"=r"(var))                                                                  
+#define GET_FROM_STACK_3(var) asm("mov %%rcx,%0;":"=r"(var))                                  
+#define GET_FROM_STACK_4(var) asm("mov %%r8,%0;":"=r"(var))                                                                 
+#define GET_FROM_STACK_5(var) asm("mov %%r9,%0;":"=r"(var))
+
 
 #define O_CREAT 0b1
 #define O_APPEND 0b10

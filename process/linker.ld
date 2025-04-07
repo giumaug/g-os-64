@@ -1,7 +1,7 @@
 ENTRY (main)
 process_load_address = 0x100000;
 
-MEMORY { process_address_space : ORIGIN = 0x100000, LENGTH = 0x100000 }
+MEMORY { process_address_space : ORIGIN = 0x40000000, LENGTH = 0x100000 }
 
 SECTIONS
 {

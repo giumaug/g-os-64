@@ -26,7 +26,12 @@ static void a_usr_space_init(t_a_usr_space_desc *a_fixed_size_desc,unsigned int 
 	previous_block_desc=NULL;
 	current_block_desc=a_fixed_size_desc->first_block;
 	for (index=1;index<num_block;index++)
-    {	
+    {
+		printf("index is %d \n", index);
+		if (index == 15)
+		{
+			printf("index is %d \n", index);
+		}
         next_block_desc=((char *)current_block_desc)+sizeof(t_us_block_desc)+a_fixed_size_desc->block_size;
 		current_block_desc->next_block=next_block_desc;
 		current_block_desc->previous_block=previous_block_desc;
@@ -81,11 +86,14 @@ static void init_malloc()
 
 	mem_addr=HEAP_VIRT_MEM_START_ADDR-MEM_TO_POOL;
 	//ALLOCATED POOL OF 4 8 16 32 64 128 256 512 1024 2048 4096 8192 16384 32768 65536 131072 BYTE
+	printf("start init malloc \n");
 	for (i=0;i<POOL_NUM;i++)
 	{
 		mem_addr+=MEM_TO_POOL;
 		a_usr_space_init(&a_fixed_size_desc[i],pow2(2+i),mem_addr,MEM_TO_POOL);
+		printf(".");
 	}
+	printf("end init malloc \n");
 }
 
 void* _malloc(unsigned int mem_size) 
