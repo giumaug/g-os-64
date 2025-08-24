@@ -11,15 +11,17 @@ void page_fault_handler();
 
 void ret_from_int_handler_flush();
 
+
 void* init_virtual_memory()
 {
 	static struct t_i_desc i_desc;
 	u32 i,y,z;
 	u32 dir_num;
-	u64* pml4 = MASTER_PML4;
-	u64* ptr = MASTER_PTR;
-	u64* dir = MASTER_DIR;
-	u64* pages = MASTER_PAGES;
+	//Still with temp memory mapping. Physical and virtual table pages coincide.
+	u64* pml4 = PHY_MASTER_PML4;
+	u64* ptr = PHY_MASTER_PTR;
+	u64* dir = PHY_MASTER_DIR;
+	u64* pages = PHY_MASTER_PAGES;
 	u64 mem_addr = 0;
 	u8* static_mem = NULL;
 	u32 static_mem_size;
@@ -32,8 +34,8 @@ void* init_virtual_memory()
 	i_desc.pad=0;
 	set_idt_entry(0x0E,&i_desc);
 	
-	static_mem_size = STATIC_BUDDY_STRUCT_START_ADDR -  MASTER_PML4;
-	static_mem = MASTER_PML4;
+	static_mem_size = STATIC_BUDDY_STRUCT_START_ADDR -  PHY_MASTER_PML4;
+	static_mem = PHY_MASTER_PML4;
 	for (i = 0; i < static_mem_size; i++)
 	{
 		static_mem[i] = NULL;
@@ -42,9 +44,8 @@ void* init_virtual_memory()
 	pml4[0] = ((u64) ptr) | PAGE_IN_MEMORY | PAGE_WRITE;
 	ptr[0] = ((u64) dir) | PAGE_IN_MEMORY | PAGE_WRITE;
 	
-	//Map 0 - end page table memory address
-	dir_num = (((MEM_START_ADDR / 0x1000) + 1) / 0x200) + 1;
-	for (y = 0; y < dir_num; y++)
+	//Map 1M - end page table memory address
+	for (y = 0; y < 2; y++)
     {
 		pages_index += PAGE_SIZE;
 		dir[y] = ((u64) pages) + pages_index | PAGE_IN_MEMORY | PAGE_WRITE | USER;
@@ -53,21 +54,7 @@ void* init_virtual_memory()
 			pages[((pages_index / 8) + z)] = mem_addr | PAGE_IN_MEMORY | PAGE_WRITE | SUPERUSER;
 			mem_addr += PAGE_SIZE;
 		}
-	}
-
-//	//Map device reserved area
-//	mem_addr = DEVICE_MEM;
-//	//ptr[3] =  ((u64) dir) + (dir_num * 4096) | PAGE_IN_MEMORY | PAGE_WRITE | USER;
-//	for (i = 384; i < 512; i++)
-//	{
-//		dir[i + (512 * dir_num)] = ((u64) pages) + pages_index | PAGE_IN_MEMORY | PAGE_WRITE | USER;
-//		for(z = 0; z < 512; z++)
-//		{
-//			pages[((pages_index / 8) + z)] = mem_addr | PAGE_IN_MEMORY | PAGE_WRITE | SUPERUSER;
-//			mem_addr += PAGE_SIZE;
-//		}
-//		pages_index += PAGE_SIZE;
-//	}
+	}	
 	
 	//Map kernel memory
 	mem_addr = PHY_MEM_START_ADDR;
@@ -85,22 +72,23 @@ void* init_virtual_memory()
 			}
 		}
 	}
-	return pml4;
+	return FROM_PHY_TO_VIRT(((u64)pml4));
 }
 
-int map_vm_mem_static(u64 vir_mem_addr, u64 phy_mem_addr, u64 mem_size)
+//No longer required.
+int __map_vm_mem_static(u64 vir_mem_addr, u64 phy_mem_addr, u64 mem_size)
 {
 	u32 i,j;
 	u32 _pages_index;
-	//u32 dir_num;
 	u32 first_pd,last_pd;
 	u32 first_pt,last_pt; 
 	u32 start_pt,end_pt;
 	u32 page_count,pd_count;
+	u64* page_table = NULL;
 	
-	u64* ptr = MASTER_PTR;
-	u64* dir = MASTER_DIR;
-	u64* pages = MASTER_PAGES;
+	u64* ptr = FROM_PHY_TO_VIRT(PHY_MASTER_PTR);
+	u64* dir = FROM_PHY_TO_VIRT(PHY_MASTER_DIR);
+	u64* pages = FROM_PHY_TO_VIRT(PHY_MASTER_PAGES);
 	
 	if (vir_mem_addr + mem_size >= 0x40000000)
 	{
@@ -120,9 +108,9 @@ int map_vm_mem_static(u64 vir_mem_addr, u64 phy_mem_addr, u64 mem_size)
 		if (dir[i] == 0)
 		{
 			pages_index += PAGE_SIZE;
-			dir[i] = ((u64) pages) + pages_index | PAGE_IN_MEMORY | PAGE_WRITE | USER;
+			dir[i] = PHY_MASTER_PAGES + pages_index | PAGE_IN_MEMORY | PAGE_WRITE | USER;
 		}
-		_pages_index = (dir[i] - ((u64) pages)) & 0xFFFFFF00;
+		page_table = ALIGN_4K(FROM_PHY_TO_VIRT(((u64*) dir)[i]));
 		
 		if (i == first_pd && pd_count > 1) 
 		{
@@ -146,26 +134,13 @@ int map_vm_mem_static(u64 vir_mem_addr, u64 phy_mem_addr, u64 mem_size)
 		}
 		for (j = start_pt; j < end_pt; j++)
 		{
-			pages[((_pages_index / 8) + j)] = phy_mem_addr | PAGE_IN_MEMORY | PAGE_WRITE | SUPERUSER;
+			page_table[j] = phy_mem_addr | PAGE_IN_MEMORY | PAGE_WRITE | SUPERUSER;
 			phy_mem_addr += PAGE_SIZE;
 		}
 	}
 	return 0;
 }
 
-//init schema
-//new_pml4[0] = new_ptr
-//new_ptr[0] = new_dir
-//new_ptr[16] = ptr[16]
-//new_ptr[17] = ptr[17]
-//...
-//new_ptr[512] = ptr[512]
-//
-//new_dir[0] = new_pg
-//new_pg[0] = pg[0]
-//new_pg[1] = pg[1]
-//...
-//new_pg[255] = pg[255]
 void init_vm_process(struct t_process_context* process_context)
 {
 	u32 i,y;
@@ -174,8 +149,6 @@ void init_vm_process(struct t_process_context* process_context)
 	u64* page_dir =  NULL;
 	u64* page_table = NULL;
 	u64* master_page_ptr = NULL;
-	u64* master_page_dir = NULL;
-	u64* master_page_table = NULL;
 	struct t_process_context* current_process_context = NULL;
 	u32 dir_num = 0;
 	
@@ -188,9 +161,6 @@ void init_vm_process(struct t_process_context* process_context)
 	((u64*)page_pml4)[0] = FROM_VIRT_TO_PHY((u64) page_ptr) | 7;
 	
 	master_page_ptr = ALIGN_4K(FROM_PHY_TO_VIRT(((u64*)system.master_page_pml4)[0]));
-	master_page_dir = ALIGN_4K(FROM_PHY_TO_VIRT(((u64*)master_page_ptr)[0]));
-	master_page_table = ALIGN_4K(FROM_PHY_TO_VIRT(((u64*)master_page_dir)[0]));
-		
 	for (i = 0; i < 1; i++)
     {
 		page_ptr[i] = master_page_ptr[i];
@@ -202,8 +172,7 @@ void init_vm_process(struct t_process_context* process_context)
 	}
 	
 	map_vm_mem(page_pml4, (KERNEL_STACK-KERNEL_STACK_SIZE), process_context->phy_kernel_stack, KERNEL_STACK_SIZE, 3);
-	//CURRENT_PROCESS_CONTEXT(current_process_context);
-	SWITCH_PAGE_DIR(FROM_VIRT_TO_PHY((process_context->page_pml4)))
+	SWITCH_PAGE_DIR(FROM_VIRT_TO_PHY((((u64)process_context->page_pml4))))
 }
 	
 void* clone_vm_process(void* parent_page_pml4,u64 process_type, u64 kernel_stack_addr)
@@ -225,15 +194,15 @@ void* clone_vm_process(void* parent_page_pml4,u64 process_type, u64 kernel_stack
 	
 	page_ptr = buddy_alloc_page(system.buddy_desc,0x1000);
 	buddy_clean_mem(page_ptr);
-	((u64*)page_pml4)[0] = FROM_VIRT_TO_PHY((u64) page_ptr) | 7;
+	page_pml4[0] = FROM_VIRT_TO_PHY((u64)page_ptr) | 7;
 	
 	page_dir = buddy_alloc_page(system.buddy_desc,0x1000);
 	buddy_clean_mem(page_dir);
-	((u64*)page_ptr)[0] = FROM_VIRT_TO_PHY((u64) page_dir) | 7;
+	page_ptr[0] = FROM_VIRT_TO_PHY((u64)page_dir) | 7;
 	
 	page_table = buddy_alloc_page(system.buddy_desc, 0x1000);
 	buddy_clean_mem(page_table);
-	((u64*)page_dir)[0] = FROM_VIRT_TO_PHY((u64) page_table) | 7;
+	page_dir[0] = FROM_VIRT_TO_PHY((u64)page_table) | 7;
 	
 	parent_page_ptr = ALIGN_4K(FROM_PHY_TO_VIRT(((u64*)parent_page_pml4)[0]));
 	parent_page_dir = ALIGN_4K(FROM_PHY_TO_VIRT(((u64*)parent_page_ptr)[0]));
@@ -247,56 +216,42 @@ void* clone_vm_process(void* parent_page_pml4,u64 process_type, u64 kernel_stack
 			if (parent_page_ptr[i] != 0)
 			{
 				parent_page_dir = ALIGN_4K(FROM_PHY_TO_VIRT(((u64*)parent_page_ptr)[i]));
-				if (parent_page_dir != 0)
+				if (i != 15)
 				{
 					page_dir = buddy_alloc_page(system.buddy_desc,0x1000);
 					buddy_clean_mem(page_dir);
-					((u64*)page_ptr)[i] = FROM_VIRT_TO_PHY((u64) page_dir) | 7;
-					for (j = 0; j < 512 ;j++)
+					page_ptr[i] = FROM_VIRT_TO_PHY((u64)page_dir) | 7;
+				}
+				else
+				{
+					page_dir = ALIGN_4K(FROM_PHY_TO_VIRT(((u64*)page_ptr)[i]));
+				}
+				for (j = 0; j < 512 ;j++)
+				{
+					if (parent_page_dir[j] != 0)
 					{
 						parent_page_table = ALIGN_4K(FROM_PHY_TO_VIRT(((u64*)parent_page_dir)[j]));
-						if (parent_page_table != 0)
-						{
-							if (i != 15 && j != 511)
-							{				
-								page_table = buddy_alloc_page(system.buddy_desc,PAGE_SIZE);
-								buddy_clean_mem(page_table);
-							}
-							else
-							{
-								page_table = ALIGN_4K(FROM_PHY_TO_VIRT(((u64*) page_dir)[511]));
-							}
-								
-							for (z = 0; z < 512; z++)
-							{
-								if (j != 511 || (j == 511 && z != 509 && z != 510))
-								{
-									u32 tmp = 0;
-									parent_page_table[z] &= 0xFFFFFFFD;
-									page_table[z] = parent_page_table[z];
-									if (page_table[z] != 0)
-									{
-										tmp = BLOCK_INDEX_FROM_PHY(ALIGN_4K(parent_page_table[z]));
-										system.buddy_desc->count[BLOCK_INDEX_FROM_PHY(ALIGN_4K(parent_page_table[z]))]++;
-									}
-								}
-							}
-							if (i != 15 && j != 511)
-							{
-								page_dir[i]=FROM_VIRT_TO_PHY(((u64) page_table)) | 7;
-							}
-							//NON RICORDO A CHE SERVE QUESTA COSA. NON DOVREBBE ESSERCI. DA VERIIFCARE IN ESECUZIONE
-							//if (j == 767)
-							//{
-							//	unsigned int kkk=(((unsigned int*)parent_page_dir)[i]) | 7;
-							//	((unsigned int*) parent_page_dir)[i]=kkk;
-							//}
+						if (i != 15 && j != 510)
+						{				
+							page_table = buddy_alloc_page(system.buddy_desc,PAGE_SIZE);
+							buddy_clean_mem(page_table);
+							page_dir[j] = FROM_VIRT_TO_PHY(((u64) page_table)) | 7;
 						}
 						else
 						{
-							if (j != 511)
-							{	
-								page_dir[j]=0;
+							page_table = ALIGN_4K(FROM_PHY_TO_VIRT(((u64*) page_dir)[510]));
+						}
+								
+						for (z = 0; z < 512; z++)
+						{ 	
+							if (i !=15 || (i == 15 && j !=510) || (i == 15 && j ==510 && z != 253 && z != 254))
+							{
+								if (parent_page_table[z] != 0)
+								{
+									system.buddy_desc->count[BLOCK_INDEX(ALIGN_4K(parent_page_table[z]))]++;
+									parent_page_table[z] &= 0xFFFFFFFFFFFFFFFD;
+									page_table[z] = parent_page_table[z];
+								}	
 							}
 						}
 					}
@@ -309,10 +264,9 @@ void* clone_vm_process(void* parent_page_pml4,u64 process_type, u64 kernel_stack
 	for (i = 16; i < 16 + G_PHY_MEM_SIZE; i++)
 	{
 		page_ptr[i] = parent_page_ptr[i];
-	}
-		
+	}	
 	CURRENT_PROCESS_CONTEXT(current_process_context);
-	SWITCH_PAGE_DIR(FROM_VIRT_TO_PHY((current_process_context->page_pml4))) 
+	SWITCH_PAGE_DIR(FROM_VIRT_TO_PHY((current_process_context->page_pml4))) 	
 	RESTORE_IF_STATUS
 	return page_pml4;		
 }
@@ -333,7 +287,7 @@ void free_vm_process(struct t_process_context* process_context)
 	
 void free_vm_process_user_space(struct t_process_context* process_context)
 {
-	unsigned int i,j;
+	unsigned int i,j, z;
 	u64* page_pml4 = NULL;
 	u64* page_ptr = NULL;
 	u64* page_dir =  NULL;
@@ -345,54 +299,52 @@ void free_vm_process_user_space(struct t_process_context* process_context)
 	page_ptr = ALIGN_4K(FROM_PHY_TO_VIRT(((u64*)page_pml4)[0]));
 	page_dir = ALIGN_4K(FROM_PHY_TO_VIRT(((u64*)page_ptr)[0]));
 	page_table = ALIGN_4K(FROM_PHY_TO_VIRT(((u64*)page_dir)[0]));
-	
-	for (i = 256; i < 512; i++)
-	{
-		if (page_table[i] != 0 && system.buddy_desc->count[BLOCK_INDEX_FROM_PHY(ALIGN_4K(page_table[i]))] == 1)
-		{
-			buddy_free_page(system.buddy_desc,ALIGN_4K(FROM_PHY_TO_VIRT(page_table[i])));
-			system.buddy_desc->count[BLOCK_INDEX_FROM_PHY(ALIGN_4K(page_table[i]))] = 0;
-		}
-		else if (page_table[i] != 0)
-		{
-			system.buddy_desc->count[BLOCK_INDEX_FROM_PHY(ALIGN_4K(page_table[i]))]--;
-		}
-		page_table[i] = 0;
-	}
-	
-	for (i = 0; i < G_PHY_MEM_SIZE; i++)
+		
+	for (i = 1; i <= 15; i++)
 	{
 		if (page_ptr[i] != 0)
 		{
 			page_dir = ALIGN_4K(FROM_PHY_TO_VIRT(((u64*)page_ptr)[i]));
-			if (page_dir != 0)
+			for (j = 0; j < 512 ;j++)
 			{
-				for (j = 0; j < 512 ;j++)
-				{
-					if (i != 0 && j != 0)
-					{
-						page_table = ALIGN_4K(((u64*)page_dir)[j]);
-						if (page_table != 0)
+				if (page_dir[j] != 0)
+				{					
+					page_table= ALIGN_4K(FROM_PHY_TO_VIRT(((u64*)page_dir)[j]));
+					for (z = 0; z < 512; z++) 
+					{	
+						if (i !=15 || (i == 15 && j !=510) || (i == 15 && j ==510 && z != 253 && z != 254))
 						{
-							if (i != 15 && j != 510)
+							if (page_table[z] != 0 && system.buddy_desc->count[BLOCK_INDEX(ALIGN_4K(page_table[z]))] == 1)
 							{
-								if (page_table != 0 && system.buddy_desc->count[BLOCK_INDEX_FROM_PHY(ALIGN_4K(page_table))] == 1)
-								{
-									buddy_free_page(system.buddy_desc,ALIGN_4K(FROM_PHY_TO_VIRT(page_table)));
-									system.buddy_desc->count[BLOCK_INDEX_FROM_PHY(ALIGN_4K(page_table))] = 0;
-								}
-								else if (page_table != 0)
-								{
-									system.buddy_desc->count[BLOCK_INDEX_FROM_PHY(ALIGN_4K(page_table))]--;
-								}
-								page_table = 0;
+								u64 uuu = BLOCK_INDEX(ALIGN_4K(page_table[z]));
+								u64 ooo = ALIGN_4K(page_table[z]);
+								u64 sss = BUDDY_START_ADDR;
+								buddy_free_page(system.buddy_desc,ALIGN_4K(FROM_PHY_TO_VIRT(page_table[z])));
+								system.buddy_desc->count[BLOCK_INDEX(ALIGN_4K(page_table[z]))] = 0;
+								page_table[z] = 0;
 							}
-						}
+							else if (page_table[z] != 0)
+							{
+								system.buddy_desc->count[BLOCK_INDEX(ALIGN_4K(page_table[z]))]--;
+								page_table[z] = 0;
+							}
+					    }
+					}
+					if (i != 15 || (i == 15 && j != 510))
+					{
+						buddy_free_page(system.buddy_desc, page_table);
+						page_dir[j]=0;
 					}
 				}
+			}	
+			if (i != 15)
+			{
+				buddy_free_page(system.buddy_desc, page_dir);
+				page_ptr[i]=0;
 			}
 		}
 	}
+	RESTORE_IF_STATUS
 }
 	
 int map_vm_mem(u64* page_pml4, u64 vir_mem_addr, u64 phy_mem_addr, u64 mem_size, u32 flags)
@@ -561,8 +513,6 @@ void page_fault_handler()
 	u64 aligned_fault_addr;
 	char fault_code;
 	u64 page_addr;
-	//u32 page_num;
-	//u32 page_offset;
 	u64 stack_reg_start;
 	struct t_process_context* current_process_context;
 	struct t_processor_reg processor_reg;
@@ -570,8 +520,10 @@ void page_fault_handler()
 	u64 pd_num;
 	u64 pt_num;
 	u64 phy_fault_addr;
+	u64 phy_page_addr;
 	
 	SAVE_PROCESSOR_REG
+	SWITCH_SS_TO_KERNEL_MODE
 	GET_FAULT_ADDRESS(fault_addr, fault_code);
 	CURRENT_PROCESS_CONTEXT(current_process_context);
 	on_exit_action=0;
@@ -586,34 +538,38 @@ void page_fault_handler()
 			page_addr = 0;
 			page_addr = buddy_alloc_page(system.buddy_desc, PAGE_SIZE);
 			map_vm_mem(current_process_context->page_pml4, aligned_fault_addr, FROM_VIRT_TO_PHY(page_addr), PAGE_SIZE, 7);
-			system.buddy_desc->count[BLOCK_INDEX_FROM_PHY(FROM_VIRT_TO_PHY(page_addr))]++;
+			phy_page_addr = FROM_VIRT_TO_PHY(page_addr);
+			system.buddy_desc->count[BLOCK_INDEX(phy_page_addr)]++;
 			elf_loader_read(current_process_context->elf_desc, fault_addr, page_addr);
 		}
 		else if ((fault_code & 0x1) == PAGE_OUT_MEMORY && (CHECK_MEM_REG(fault_addr, current_process_context->heap_mem_reg) || CHECK_MEM_REG(fault_addr, current_process_context->ustack_mem_reg)))
 		{
 			page_addr = buddy_alloc_page(system.buddy_desc, PAGE_SIZE);
+			phy_page_addr = FROM_VIRT_TO_PHY(page_addr);
 			map_vm_mem(current_process_context->page_pml4, aligned_fault_addr, FROM_VIRT_TO_PHY(page_addr), PAGE_SIZE, 7);
-			system.buddy_desc->count[BLOCK_INDEX_FROM_PHY(FROM_VIRT_TO_PHY(page_addr))]++;				
+			system.buddy_desc->count[BLOCK_INDEX(phy_page_addr)]++;			
 		}
 		else if ((fault_code & 0x3) == (PAGE_IN_MEMORY | PAGE_WRITE))
 		{
-			dir_num = aligned_fault_addr / G_PHY_MEM_SIZE;
-			pd_num = aligned_fault_addr >> 21;
+			dir_num = (aligned_fault_addr & 0x7FC0000000) >> 30;
+			pd_num = (aligned_fault_addr & 0x3FFFFFFF) >> 21;
 			pt_num = (aligned_fault_addr & 0x1FFFFF) >> 12;	
 			page_pml4 = current_process_context->page_pml4;
+			
 			page_ptr = ALIGN_4K(FROM_PHY_TO_VIRT(((u64*)page_pml4)[0]));
 		    page_dir = ALIGN_4K(FROM_PHY_TO_VIRT(((u64*)page_ptr)[dir_num]));
 			page_table = ALIGN_4K(FROM_PHY_TO_VIRT(((u64*) page_dir)[pd_num]));
 			
 			phy_fault_addr = ALIGN_4K(((u64*) page_table)[pt_num]);
 			((u64*) page_table)[pt_num] |= 7;
-			if (system.buddy_desc->count[BLOCK_INDEX_FROM_PHY(phy_fault_addr)] > 1)
+			if (system.buddy_desc->count[BLOCK_INDEX(phy_fault_addr)] > 1)
 			{
 				page_addr = buddy_alloc_page(system.buddy_desc,PAGE_SIZE);
 				kmemcpy(page_addr, aligned_fault_addr, PAGE_SIZE);
 				map_vm_mem(current_process_context->page_pml4, aligned_fault_addr, FROM_VIRT_TO_PHY(page_addr), PAGE_SIZE, 7);
-				system.buddy_desc->count[BLOCK_INDEX_FROM_PHY(phy_fault_addr)]--;
-				system.buddy_desc->count[BLOCK_INDEX_FROM_PHY(FROM_VIRT_TO_PHY(page_addr))]++;
+				system.buddy_desc->count[BLOCK_INDEX(phy_fault_addr)]--;
+				phy_page_addr = FROM_VIRT_TO_PHY(page_addr);
+				system.buddy_desc->count[BLOCK_INDEX(phy_page_addr)]++;
 			}
 		}
 		else
@@ -627,7 +583,8 @@ void page_fault_handler()
 		current_process_context->ustack_mem_reg->start_addr=aligned_fault_addr;
 		page_addr=buddy_alloc_page(system.buddy_desc,PAGE_SIZE);
 		map_vm_mem(current_process_context->page_pml4,aligned_fault_addr,FROM_VIRT_TO_PHY(page_addr),PAGE_SIZE,7);
-		system.buddy_desc->count[BLOCK_INDEX_FROM_PHY(FROM_VIRT_TO_PHY(page_addr))]++;
+		phy_page_addr = FROM_VIRT_TO_PHY(page_addr);
+		system.buddy_desc->count[BLOCK_INDEX(phy_page_addr)]++;
 	}
 	else
 	{
@@ -638,7 +595,6 @@ void page_fault_handler()
 		on_exit_action = 0;
 		page_addr=buddy_alloc_page(system.buddy_desc,PAGE_SIZE);
 		map_vm_mem(current_process_context->page_pml4,aligned_fault_addr,FROM_VIRT_TO_PHY(page_addr),PAGE_SIZE,7);
-
 	}
 
 	SWITCH_PAGE_DIR(FROM_VIRT_TO_PHY((current_process_context->page_pml4))) 	
@@ -655,7 +611,7 @@ void page_fault_handler()
 	_current_process_context=*(struct t_process_context*)system.process_info->current_process->val;             		
 	_old_process_context=_current_process_context;                                                             		
 	_processor_reg=processor_reg;
-                                                       		
+	                                                   		
 	if (_action2>0)                                                                                            		
 	{                                                                                                          		
 		schedule(&_current_process_context,&_processor_reg);                                               		
@@ -675,14 +631,7 @@ void page_fault_handler()
 	else                                                                                                       		
 	{                                                                                                            		
 		RESTORE_PROCESSOR_REG
-//		RET_FROM_INT_HANDLER_FLUSH
-
-        asm("movq %rbp,%rsp;");
-        asm("pop %rbp;");
-		asm(".lcomm TMPX,8;movabs %rax,TMPX;");
-		asm("pop %rax;movabs TMPX,%rax;");
-		asm ("iretq;");		
-	                                                                                                		
+		RET_FROM_INT_HANDLER_FLUSH	                                                                                                		
 	}
 } 
 

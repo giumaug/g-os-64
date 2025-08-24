@@ -3,9 +3,9 @@
 #include "debug.h"
 #include "timer.h"
 
-unsigned int collect_mem=1;
-u64 collected_mem[50005];
-//u64 collected_mem[1000];
+unsigned int collect_mem=0;
+//u64 collected_mem[50005];
+u64 collected_mem[1000];
 unsigned int collected_mem_index=0;
 unsigned int allocated_block=0;
 unsigned int start_count = 0;

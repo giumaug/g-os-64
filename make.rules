@@ -8,4 +8,5 @@ LD		= ld
 #CFLAGS         = -O0 -ggdb -c -fno-builtin -m32
 #CFLAGS         = -O0 -g -c -fno-builtin -m32
 CFLAGS		= -O0 -gdwarf-4 -c -fno-builtin -fno-pie -mcmodel=large -fno-stack-protector -Wno-error=int-conversion -Wno-error=incompatible-pointer-types  -mno-sse
+#CFLAGS		= -m32 -O0 -gdwarf-4 -c -fno-builtin -fno-pie -fno-stack-protector -Wno-error=int-conversion -Wno-error=incompatible-pointer-types  -mno-sse
 CPPFLAGS	=-I $(INCLUDE) 

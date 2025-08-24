@@ -16,19 +16,18 @@
 
 void process_0();
 
-//to fix when file system working!!
 unsigned int seed=105491;
-extern unsigned int PAGE_DIR;
-t_system system;
+//extern unsigned int PAGE_DIR;
+unsigned char tmp_kernel_stack[4096];
 
+t_system system;
+	
 void kmain(multiboot_info_t* mbd, u64 magic, u64 init_data_add)
 {
-	u32 device_num;
 	static multiboot_info_t _mbd;
 	_mbd = *mbd;
 	static struct t_process_info process_info;
 	static t_scheduler_desc scheduler_desc;
-//	static t_buddy_desc buddy_desc;
 	static unsigned int* init_data;
     init_data = init_data_add;
 	static struct t_process_context* process_context = NULL;
@@ -38,7 +37,7 @@ void kmain(multiboot_info_t* mbd, u64 magic, u64 init_data_add)
 	static t_ext2 ext2_d2;
 	static u64 kernel_stack;
 	static t_ahci_device_desc* device_desc_ahci = NULL;
-	t_device_desc* device_desc = NULL;
+	static t_device_desc* device_desc = NULL;
 	system.time = 0;
 	system.flush_network = 0;
     system.read_block_count = 0;
@@ -46,7 +45,6 @@ void kmain(multiboot_info_t* mbd, u64 magic, u64 init_data_add)
 	system.read_write_count = 0;
 	system.run_time = 0;
 	system.run_time_1 = 0;
-	device_num = 0;
 	
 	init_data = init_data_add;
  	CLI
@@ -59,23 +57,23 @@ void kmain(multiboot_info_t* mbd, u64 magic, u64 init_data_add)
 	
 	init_idt();
 	system.master_page_pml4 = (void*)init_virtual_memory();
-	SWITCH_PAGE_DIR(system.master_page_pml4)
+	SWITCH_PAGE_DIR(FROM_VIRT_TO_PHY(((u64)system.master_page_pml4)))
+	asm volatile ("mov %0,%%rbp;"::"r"(tmp_kernel_stack));
+	asm volatile ("mov %0,%%rsp;"::"r"(tmp_kernel_stack));
 	
 	init_kmallocs();
-	//init_idt();
 	system.buddy_desc = buddy_init();
 	init_scheduler();
 	system.timer_list = new_dllist();
 	init_ioapic();
 	init_lapic();
 	init_kbc();
-	init_fb(mbd);
+	init_fb(&_mbd);
 	init_console(&console_desc, &draw_char_fb, &update_cursor_fb, 2, 0);
 	system.active_console_desc = &console_desc;
-	//system.network_desc = network_init();
-	system.network_desc = NULL;
+	system.network_desc = network_init();
 	
-	device_desc = init_device(device_num, 2);
+	device_desc = init_device(0, 2);
 	device_desc_ahci = init_ahci(device_desc);
 	system.device_desc = device_desc;
 	init_ext2(&ext2_d1,system.device_desc);
@@ -121,26 +119,15 @@ void kmain(multiboot_info_t* mbd, u64 magic, u64 init_data_add)
 	process_context->socket_desc = hashtable_init(PROCESS_INIT_SOCKET);
 	process_context->next_sd = 0;
 	process_context->sig_num = 0;
-	
-	//buddy_check_mem(system.buddy_desc, 0xf102f000);
 	process_context->page_pml4 = buddy_alloc_page(system.buddy_desc,0x1000);
-	//buddy_check_mem(system.buddy_desc, 0xf102f000);
-	                    
+	 
 	init_vm_process(process_context);
-	//*(system.process_info->tss.ss) = 0x18;
 	*(system.process_info->tss.esp) = KERNEL_STACK;
 	//system.network_desc = network_init();                  		
 	kernel_stack = KERNEL_STACK - 100;
 	asm volatile ("mov %0,%%rbp;"::"r"(kernel_stack));
 	asm volatile ("mov %0,%%rsp;"::"r"(kernel_stack));
-	
-//	int i;
-//	for (i = 0; i < 25000; i++)
-//	{
-//			(system.tcp_fin_status[i]).status = 0;
-//			system.tcp_fin_status[i].conn = 0;
-//	}
-	
+		
 	STI
 	process_0();	       	
 }

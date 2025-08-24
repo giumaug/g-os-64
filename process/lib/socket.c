@@ -12,14 +12,14 @@ int socket(int socket_family, int socket_type, int protocol)
 int bind(int sockfd, const struct sockaddr *addr,socklen_t addrlen)
 {
 	unsigned char* port;
-	unsigned long params[4];
+	unsigned long params[6];
 
 	port=&((struct sockaddr_in*) addr)->sin_port;
 	params[0]=sockfd;
 	params[1]=0;
 	params[2]=((port[0])<<8)+port[1];
 	SYSCALL(29,params);
-	return  params[3];
+	return  params[5];
 }
 
 int listen(int sockfd , int backlog)

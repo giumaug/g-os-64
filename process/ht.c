@@ -64,7 +64,7 @@ int main()
 	while(1) 
 	{
 		age++;
-		if ((age % 1000) == 0)
+		if ((age % 100) == 0)
 		{
 			check_free_mem();
 		}
@@ -79,8 +79,8 @@ int main()
 
 		if(fork() == 0) 
 		{
-			process_request(client_sockfd);
-			//process_request_2(client_sockfd);
+			//process_request(client_sockfd);
+			process_request_2(client_sockfd);
 			//process_request_3(client_sockfd);
 			close_socket(client_sockfd);
 			exit(0);
@@ -155,7 +155,7 @@ void process_request_2(int client_sockfd)
 	const char body[]  = "ciao";
 	const char http_header[]  = "HTTP/1.1 200 OK\nConnection: close\nContent-Type:text/html;\nContent-Disposition: inline;charset=utf-8\nContent-Length:5\n\n";
 
-    printf("inside request 2 \n");
+    //printf("inside request 2 \n");
 	ret = write_socket(client_sockfd,http_header,118);
 	if (ret < 0)
 	{

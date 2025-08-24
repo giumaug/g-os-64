@@ -96,7 +96,7 @@ int connect_tcp(u32 dst_ip,u16 dst_port,t_socket* socket)
 		return -1;
 	}
 	src_ip = system.network_desc->ip;
-	tcp_conn_desc = tcp_conn_desc_int(EPHEMERAL_PORT_MAP_SIZE);
+	tcp_conn_desc = tcp_conn_desc_int();
 	tcp_conn_desc->isActive = 1;
 	tcp_conn_desc->ref_count = 1;
 	tcp_conn_desc->dst_ip = dst_ip;

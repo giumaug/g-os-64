@@ -21,6 +21,6 @@ typedef char s8;
 #define U_N_INT(n) typedef struct  { unsigned int  val: n ;}
 
 #define U_64_LOW(val)  ((u64) val) & 0xFFFFFFFF
-#define  U_64_HIGH(val) ((u64) val) >> 32
+#define U_64_HIGH(val) ((u64) val) >> 32
 
 #endif

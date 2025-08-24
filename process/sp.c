@@ -81,14 +81,14 @@ int main()
 			io_buffer = malloc(b_to_read);
 			//file_len = 1073741824;
 			file_len = 31457280;
-			for (t = 0; t < 30;t++)
+			for (t = 0; t < 3;t++)
 			{
 				current_len = file_len;
 				while (current_len > 0)
 				{
 					b_read = b_to_read;
 					ret = write_socket(client_sockfd,buffer_1,b_read);
-					ret = 1;
+					//ret = 1;
 					while (ret <= 0 )
 					{
 						ret = write_socket(client_sockfd, buffer_1,b_read);
@@ -96,7 +96,7 @@ int main()
 					}			
 					current_len -= b_read;
 					io_buffer[b_read] = '\0';
-					//printf("current len is %d \n",current_len);
+					printf("current len is %d \n",current_len);
 				}
 			}
 			printf("end.----!!!\n");

@@ -33,7 +33,7 @@ void syscall_handler()
  	SAVE_PROCESSOR_REG
 	//CLI
 	//call can come from kernel mode (sleep)
-	//SWITCH_DS_TO_KERNEL_MODE
+	SWITCH_SS_TO_KERNEL_MODE
 	syscall_num=processor_reg.rax;
 	on_exit_action=0;
 	current_process_context=system.process_info->current_process->val;
@@ -42,13 +42,14 @@ void syscall_handler()
 	params=processor_reg.rcx;
 	flush_network = 0;
 
-	//printk("syscall num = %d \n",syscall_num);
-	//printk("fg_pgid = %d \n",console_desc->fg_pgid);
-
 	switch (syscall_num) 
 	{
 		case 1:
 		params[0]=_fork(processor_reg);
+		if (params[0] == 9999) 
+        {
+			printk("ss");
+		}
 		break;
 	
 		case 2:
@@ -179,7 +180,6 @@ void syscall_handler()
 		break;	
 
 		case 30:
-		//printk("redc ");
  		params[5]=_recvfrom(params[0],params[1],params[2],params[3],params[4]);
 		break;
 	
@@ -236,7 +236,7 @@ void syscall_handler()
 		break;
 
 		case 107:
-		_signal(params[0]);
+		_signal();
 		break;
 
 		case 109:

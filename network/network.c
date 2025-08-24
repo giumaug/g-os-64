@@ -51,12 +51,12 @@ void network_free(t_network_desc* network_desc)
 //	}
 //}
 
-void equeue_packet(t_network_desc* network_desc)
-{
-		return;
-}
+//void equeue_packet(t_network_desc* network_desc)
+//{
+//		return;
+//}
 
-void __equeue_packet(t_network_desc* network_desc)
+void equeue_packet(t_network_desc* network_desc)
 {
 	t_sckt_buf_desc* sckt_buf_desc;
 	t_data_sckt_buf* data_sckt_buf;
@@ -85,13 +85,13 @@ void __equeue_packet(t_network_desc* network_desc)
 //	RESTORE_IF_STATUS
 }
 
-void dequeue_packet(t_network_desc* network_desc)
-{
-		return;
-}
+//void dequeue_packet(t_network_desc* network_desc)
+//{
+//		return;
+//}
 
 //TO VERIFY NEW LOGIC WITH INTERRUPT DISABLED!!!!
-void __dequeue_packet(t_network_desc* network_desc)
+void dequeue_packet(t_network_desc* network_desc)
 {
 	t_data_sckt_buf* data_sckt_buf;
 	system.flush_network = 0;

@@ -86,7 +86,7 @@ t_tcp_conn_desc* tcp_conn_desc_int()
 	tcp_conn_desc->rtrsn_timer = timer_init(0,&rtrsn_timer_handler,tcp_conn_desc,NULL);
 	tcp_conn_desc->pgybg_timer = timer_init(0,&pgybg_timer_handler,tcp_conn_desc,NULL);
 	tcp_conn_desc->back_log_i_map = tcp_conn_map_init();
-	tcp_conn_desc->back_log_c_queue = new_queue(&tcp_conn_desc_free);
+	tcp_conn_desc->back_log_c_queue =  dc_new_queue(&tcp_conn_desc_free);
 	tcp_conn_desc->rto = DEFAULT_RTO;
 	tcp_conn_desc->srtt = DEFAULT_RTO;
 	tcp_conn_desc->cwnd = SMSS;
@@ -305,9 +305,12 @@ void rcv_packet_tcp(t_data_sckt_buf* data_sckt_buf,u32 src_ip,u32 dst_ip,u16 dat
 	
 	if (checksum_tcp((unsigned short*) tcp_row_packet,src_ip,dst_ip,data_len,HEADER_TCP) !=0 )
 	{
-		printk("wrong checksum \n");
+		//panic();
+		//checksum_tcp((unsigned short*) tcp_row_packet,src_ip,dst_ip,data_len,HEADER_TCP);
+		//printk("wrong checksum \n");
 		goto EXIT;
 	}
+	//else printk(".");
 	tcp_conn_desc = tcp_conn_map_get(tcp_desc->conn_map,dst_ip,src_ip,dst_port,src_port);
 	tcp_req_desc = tcp_conn_map_get(tcp_desc->req_map,dst_ip,system.network_desc->ip,dst_port,src_port);
 	tcp_listen_desc = tcp_conn_map_get(tcp_desc->listen_map,system.network_desc->ip,0,dst_port,0);
@@ -656,7 +659,6 @@ void rcv_packet_tcp(t_data_sckt_buf* data_sckt_buf,u32 src_ip,u32 dst_ip,u16 dat
 		{
 			if (_seq_num < _nxt_rcv)
 			{
-				printk(".");
 				tcp_conn_desc->pending_ack = 0;
 				timer_reset(tcp_conn_desc->pgybg_timer);
 				send_packet_tcp(tcp_conn_desc->src_ip,

@@ -6,17 +6,17 @@
 
 #/usr/sbin/tunctl -t tap0 -u peppe
 ip tuntap add dev tap0 mode tap user peppe
-ip link add enp0s31f6 type dummy
+ip link add enp72s0u2u2c2 type dummy
 brctl addbr virbr0
-brctl addif virbr0 enp0s31f6
+brctl addif virbr0 enp72s0u2u2c2
 sudo brctl addif virbr0 tap0
 
-ifconfig enp0s31f6 up
+ifconfig enp72s0u2u2c2 up
 ifconfig tap0 up
 ifconfig virbr0 up
 
 ifconfig virbr0 192.168.5.60/24
-ifconfig enp0s31f6 0.0.0.0 promisc
+ifconfig enp72s0u2u2c2 0.0.0.0 promisc
 
 sysctl -w net.ipv4.ip_forward=1
 

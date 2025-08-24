@@ -19,6 +19,7 @@
 				asm("push %r10");                                     \
 				asm("push %r11");                                     \
 				asm("push %r12");                                     \
+				asm("push %r13");                                     \
 				asm("push %r14");                                     \
 				asm("push %r15");                                     \
 				asm("push %rbp");                                     \
@@ -161,13 +162,6 @@
                               pop %rax;                             \
                              ");
 					
-//#define RET_FROM_INT_HANDLER_FLUSH asm("		                        \
-//                    movq %rbp,%rsp;	                                \
-//                    popq %rbp;                                      \
-//                    sub $8,%rbp,%rbp;	                            \	                                \
-//                    iretq;		                                    \
-//					");
-
 #define RET_FROM_INT_HANDLER_FLUSH asm("		\
 					movq %rbp,%rsp;	\
 					pop %rbp;	\
@@ -175,8 +169,16 @@
 					movabs %rax,TMPX;	\
 					pop %rax;	\
 					movabs TMPX,%rax;	\
-					iret;		\
+					iretq;		\
 					");
+					
+#define	SWITCH_SS_TO_KERNEL_MODE asm("                 \
+        			      	push %ax; 				   \
+				      	    mov $0x10,%ax;             \
+				      	    mov  %ax,%ss;			   \
+				      	    mov  %ax,%ds;              \
+				      	    pop %ax;	               \
+				     ");
 
 #define HALT asm("sti;hlt");
 //#define SWITCH_PAGE_DIR(page_dir) asm("mov $0xe00000,%rax;mov %rax,%cr3;");

@@ -19,7 +19,7 @@ void init_kmallocs()
 	unsigned int i;
 	void* mem_addr = NULL;
 	
-	mem_addr = (u64) (POOL_START_ADDR + VIRT_MEM_START_ADDR - PHY_MEM_START_ADDR - MEM_TO_POOL);
+	mem_addr = ((FROM_PHY_TO_VIRT((POOL_START_ADDR))) - (MEM_TO_POOL));
 	//ALLOCATED POOL OF 4 8 16 32 64 128 256 512 1024 2048 4096 8192 16384 32768 65536 131072 BYTE
 	for (i = 0; i < POOL_NUM; i++)
 	{
@@ -286,6 +286,7 @@ void kfree(void* address)
 	SAVE_IF_STATUS
 	CLI	  
 	pool_index=0;
+	
 	while ((pool_index + 1) * MEM_TO_POOL < (address - VIRT_MEM_START_ADDR + PHY_MEM_START_ADDR - POOL_START_ADDR))
 	{
 		pool_index++;

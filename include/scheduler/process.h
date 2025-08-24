@@ -71,7 +71,6 @@ struct t_process_context
 	struct s_console_desc* console_desc;
 	//0 thread 1 process
 	u32 process_type;
-	unsigned int phy_space_size;
 	char* page_pml4;
 	int sleep_time;
 	//when io queue manager implemented create a sleep manager too and move
@@ -84,8 +83,7 @@ struct t_process_context
 	u32 current_dir_inode_number;
 	u32 next_fd;
 	t_hashtable* file_desc;
-	unsigned int phy_kernel_stack;
-//	unsigned int phy_user_stack;
+	u64 phy_kernel_stack;
 	struct s_mem_reg* process_mem_reg;
 	struct s_mem_reg* heap_mem_reg;
 	struct s_mem_reg* ustack_mem_reg;

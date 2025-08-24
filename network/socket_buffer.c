@@ -84,7 +84,7 @@ void free_sckt(t_data_sckt_buf* data_sckt_buf)
 
 unsigned short checksum(unsigned short* ip, int len)
 {
-	long sum = 0;  /* assume 32 bit long, 16 bit short */
+	u32 sum = 0;  /* assume 32 bit long, 16 bit short */
 
 	while(len > 1)
 	{

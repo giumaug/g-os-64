@@ -46,6 +46,9 @@
 #define HBA_PORT_DET_PRESENT 3
 
 #define DMA_BUFFER_SIZE 0x10000
+
+//required internal memory: 2048 + 512 + 512 * 32
+#define AHCI_INTERNAL_MEMORY_SIZE 0x4A00
 //------------------------------------
 
 typedef struct s_fis_reg_h2d
@@ -185,6 +188,8 @@ typedef struct s_ahci_device_desc
     t_hba_mem* mem;
     t_hba_port* active_port;
     t_hashtable* mem_map;
+    char int_mem[AHCI_INTERNAL_MEMORY_SIZE];
+    u32 int_mem_index;
 }
 t_ahci_device_desc;
 

@@ -10,8 +10,6 @@ static void buddy_init_mem(t_buddy_desc* buddy);
 static void fill_buddy(t_buddy_desc* buddy, unsigned int num_list, u64 mem_addr, unsigned int num_block);
 void buddy_check_mem(t_buddy_desc* buddy, u64 mem_addr_to_check);
 
-static int global_page_counter = 0;
-
 t_buddy_desc* buddy_init()
 {
 	t_buddy_desc* buddy = NULL;
@@ -23,9 +21,6 @@ t_buddy_desc* buddy_init()
 	u64* mem_addr_bucket = NULL;
 	int i,j;
 	
-	//u64 yyy = MAX_PAGE_SIZE;
-	//u64 xxx = ALIGNED_TO_OFFSET((MEM_START_ADDR + (ALLOCATED_MEM / 10)), MAX_PAGE_SIZE);
-	
 	u64 _allocated_mem = ALLOCATED_MEM; 
     u64 _pool_start_addr = POOL_START_ADDR; 
     u64 _pool_end_addr = POOL_END_ADDR;
@@ -33,7 +28,9 @@ t_buddy_desc* buddy_init()
     u64 _buddy_start_addr = BUDDY_START_ADDR;
     u64 _buddy_end_addr = BUDDY_END_ADDR; 
     u64 _buddy_mem_size = BUDDY_MEM_SIZE;
-	
+    u64 _t_buddy_desc_size = sizeof(t_buddy_desc);
+    u64 _t_buddy_desc_array_size = BUDDY_MEM_SIZE/PAGE_SIZE;
+    
 	buddy = VIRT_MEM_START_ADDR - PHY_MEM_START_ADDR + STATIC_BUDDY_STRUCT_START_ADDR;
 	mem_addr = BUDDY_START_ADDR;
 	max_page_size = MAX_PAGE_SIZE;
@@ -44,9 +41,10 @@ t_buddy_desc* buddy_init()
 	}
 	num_entry = BUDDY_MEM_SIZE / max_page_size;
 	for (j = 0; j < num_entry; j++) 
-	{	
+	{
 		buddy->order[BLOCK_INDEX(mem_addr)] = NUM_LIST - 1;
-		mem_addr_bucket = kmalloc(sizeof(unsigned int));
+		mem_addr_bucket = kmalloc(sizeof(u64));
+		
 		*mem_addr_bucket = mem_addr;			
 		ll_prepend(buddy->page_list[NUM_LIST - 1], mem_addr_bucket);
 		buddy->page_list_ref[BLOCK_INDEX(mem_addr)] = 0;
@@ -60,11 +58,12 @@ t_buddy_desc* buddy_init()
 			mem_addr = 0xF1030000;
 		}
 		//Video memory
-		else if (mem_addr == 0xFFC00000) 
+		else if (mem_addr == 0xF0000000) 
 		{
-			fill_buddy(buddy, 4, 0xFFC00000, 15);
-			fill_buddy(buddy, 0, 0xFFCF0000, 15);
-			mem_addr = 0x100000000;
+			fill_buddy(buddy, 0, 0xF0258000, 8);
+			fill_buddy(buddy, 1, 0xF0260000, 10);
+			fill_buddy(buddy, 9, 0xF0300000, 1);
+			mem_addr = 0xF0300000;
 		}
 		//APIC + LAPIC memory
 		else if (mem_addr == 0xFEC00000)
@@ -98,15 +97,6 @@ static void fill_buddy(t_buddy_desc* buddy, unsigned int num_list, u64 mem_addr,
 		buddy->page_list_ref[BLOCK_INDEX(mem_addr)] = 0;
 		buddy->count[BLOCK_INDEX(mem_addr)] = 0;
 		mem_addr += block_size;
-		if (mem_addr == 0xf102f000)
-		{
-			global_page_counter++;
-		}
-		if (global_page_counter == 2)
-		{
-			global_page_counter = 0;
-			panic();
-		}
 	}
 }
 	
@@ -126,7 +116,6 @@ void* buddy_alloc_page(t_buddy_desc* buddy, u64 mem_size)
 	
 	SAVE_IF_STATUS
 	CLI
-	//buddy_check_mem(system.buddy_desc, 0xf102f000);
 	for (list_index = 0; list_index < NUM_LIST; list_index++) 
 	{	
 		if (PAGE_SIZE * (1 << list_index) >= mem_size) break;
@@ -157,10 +146,6 @@ void* buddy_alloc_page(t_buddy_desc* buddy, u64 mem_size)
 		page_size = PAGE_SIZE * (1 << next_list_index);
         for ( i = (next_list_index-1); i >= (int)list_index; i--)
 		{
-			if ((page_addr + page_size) == 0xf102f000)
-			{
-				panic();
-			}
 			page_size /= 2;
 			mem_addr_bucket = kmalloc(sizeof(u64));
 			*mem_addr_bucket = page_addr + page_size;
@@ -173,7 +158,7 @@ void* buddy_alloc_page(t_buddy_desc* buddy, u64 mem_size)
 	buddy->order[BLOCK_INDEX((u64)page_addr)] = (list_index | 16);
 	buddy->page_list_ref[BLOCK_INDEX((u64)page_addr)] = node;
 	system.buddy_desc->count[BLOCK_INDEX((u64)page_addr)] = 0;
-	new_mem_addr = page_addr + VIRT_MEM_START_ADDR;
+	new_mem_addr = page_addr + VIRT_MEM_START_ADDR - PHY_MEM_START_ADDR;
 	
 	if (collect_mem == 1)
 	{
@@ -201,19 +186,13 @@ void buddy_free_page(t_buddy_desc* buddy,void* to_free_page_addr)
 	SAVE_IF_STATUS
 	CLI	
 	page_addr = to_free_page_addr;
-
+	
 	if (collect_mem == 1)
 	{
 		collect_mem_free(page_addr);
 	}
 
-	page_addr -= VIRT_MEM_START_ADDR;
-	
-	if (page_addr == 0xf102a000)
-	{
-			page_addr = 0xf102a000;
-	}
-	
+	page_addr = page_addr - VIRT_MEM_START_ADDR + PHY_MEM_START_ADDR;
 	if ((buddy->order[BLOCK_INDEX(page_addr)] & 16) == 0)
 	{
 		panic();
@@ -286,6 +265,7 @@ void buddy_clean_mem(void* page_addr)
 	{
 		((u64*)page_addr)[i] = 0;
 	}
+	
 }
 
 static void buddy_init_mem(t_buddy_desc* buddy)
@@ -390,7 +370,7 @@ void buddy_check_mem(t_buddy_desc* buddy, u64 mem_addr_to_check)
 			mem_addr = (u64) *val;
 			if (mem_addr_to_check == mem_addr)
 			{
-				panic();
+				//panic();
 				counter++;
 			}
 			next=ll_next(next);

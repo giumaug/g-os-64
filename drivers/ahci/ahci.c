@@ -2,9 +2,23 @@
 #include "drivers/lapic/lapic.h"
 #include "drivers/ahci/ahci.h"
 
-static void port_init(t_hba_port* port, t_hashtable* mem_map, u8 port_num);
+static void port_init(t_ahci_device_desc* device_desc_ahci, u8 port_num);
 static void port_free(t_hba_port* port, t_hashtable* mem_map);
 static int check_type(t_hba_port* port);
+
+static t_ahci_device_desc _device_desc_ahci;
+//required internal memory: 2048 + 512 + 512 * 32
+
+u64 static alloc_mem(t_ahci_device_desc* device_desc_ahci, u32 mem_size)
+{
+	u32 index;
+	u64 mem_addr;
+	
+	index = device_desc_ahci->int_mem_index;
+	device_desc_ahci->int_mem_index += mem_size;
+	mem_addr = &(device_desc_ahci->int_mem[index]);
+	return mem_addr;
+}
 
 int static find_cmd_slot(t_hba_port* port)
 {
@@ -30,7 +44,8 @@ t_ahci_device_desc* init_ahci(t_device_desc* device_desc)
     t_ahci_device_desc* device_desc_ahci = NULL;
     struct t_i_desc i_desc;
     
-    device_desc_ahci = kmalloc(sizeof(t_ahci_device_desc));
+    //device_desc_ahci = kmalloc(sizeof(t_ahci_device_desc));
+    device_desc_ahci = &_device_desc_ahci;
     device_desc_ahci->mem_map = hashtable_init(ALIGNED_MEM_MAP_SIZE);
     
     //Dovrebbe essere memory mapped. Per verificare controllare il valore letto da bar5 con quello resituito da lspci
@@ -45,12 +60,12 @@ t_ahci_device_desc* init_ahci(t_device_desc* device_desc)
 	pci_int_line = read_pci_config_word(AHCI_PCI_BUS, AHCI_PCI_SLOT, AHCI_PCI_FUNC, AHCI_PCI_INT_LINE);
     pci_int_line |= 0x1;
 	write_pci_config_word(AHCI_PCI_BUS, AHCI_PCI_SLOT, AHCI_PCI_FUNC, AHCI_PCI_INT_LINE, pci_int_line);
-    map_vm_mem_static(AHCI_VIRT_MEM, ((u64) (phy_abar)), AHCI_VIRT_MEM_SIZE);
+    //map_vm_mem_static(AHCI_VIRT_MEM, ((u64) (phy_abar)), AHCI_VIRT_MEM_SIZE);
+    map_vm_mem(system.master_page_pml4, AHCI_VIRT_MEM, ((u64) (phy_abar)), AHCI_VIRT_MEM_SIZE, 3);
     
     device_desc_ahci->mem->ghc = device_desc_ahci->mem->ghc | 2;
-    port = &(device_desc_ahci->mem->ports[0]);
-    port_init(port, device_desc_ahci->mem_map, 0);
-    device_desc_ahci->active_port = port;
+    device_desc_ahci->active_port = &(device_desc_ahci->mem->ports[0]);
+    port_init(device_desc_ahci, 0);
     
 	i_desc.baseLow=(((u64)(&int_handler_ahci)) & 0xFFFF);
 	i_desc.selector=0x8;
@@ -298,7 +313,7 @@ void stop_cmd(t_hba_port* port)
 	}
 }
 
-static void port_init(t_hba_port* port, t_hashtable* mem_map, u8 port_num)
+static void port_init(t_ahci_device_desc* device_desc_ahci, u8 port_num)
 {
 	int i;
     //command list 1024 aligned
@@ -307,21 +322,23 @@ static void port_init(t_hba_port* port, t_hashtable* mem_map, u8 port_num)
     char* addr = NULL;
     char* algnd_addr = NULL;
     t_hba_cmd_header* cmd_header = NULL;
+    t_hba_port* port = NULL;
     
+    port = device_desc_ahci->active_port;
     stop_cmd(port);
-    addr = kmalloc(1024 + 1024);  
+    addr = alloc_mem(device_desc_ahci, (1024 + 1024));  
     algnd_addr = ALIGNED_TO_OFFSET(addr, 1024);
     port->clb = FROM_VIRT_TO_PHY((u64) algnd_addr);
     port->clbu = 0; // to check address size
     kfillmem(algnd_addr, 0, 1024);
-    hashtable_put(mem_map, algnd_addr, addr);
+    hashtable_put(device_desc_ahci->mem_map, algnd_addr, addr);
     
-    addr = kmalloc(256 + 256);
+    addr = alloc_mem(device_desc_ahci, (256 + 256));
     algnd_addr = ALIGNED_TO_OFFSET(addr, 256);
     port->fb = FROM_VIRT_TO_PHY((u64) algnd_addr);
     port->fbu = 0; // to check address size
     kfillmem(algnd_addr, 0, 256);
-    hashtable_put(mem_map, algnd_addr, addr);
+    hashtable_put(device_desc_ahci->mem_map, algnd_addr, addr);
     
     cmd_header = FROM_PHY_TO_VIRT(port->clb);
     for (i = 0; i < 32; i++)
@@ -329,12 +346,12 @@ static void port_init(t_hba_port* port, t_hashtable* mem_map, u8 port_num)
 	    // 1 prdt entry per command table
 	    // 256 bytes per command table, 64+16+48+128;
         cmd_header[i].prdtl = 1;
-        addr = kmalloc(256 + 256);
+        addr = alloc_mem(device_desc_ahci, (256 + 256));
         algnd_addr = ALIGNED_TO_OFFSET(addr, 256);
         cmd_header[i].ctba = FROM_VIRT_TO_PHY((u32) algnd_addr);
         cmd_header[i].ctbau = 0;
         kfillmem(algnd_addr, 0, 256);
-        hashtable_put(mem_map, algnd_addr, addr);
+        hashtable_put(device_desc_ahci->mem_map, algnd_addr, addr);
     }
     port->ie = 1;
     start_cmd(port);   
@@ -364,31 +381,31 @@ static void port_free(t_hba_port* port, t_hashtable* mem_map)
 	kfree(addr);
 }
 
-void test_ahci()
-{
-	int i;
-    char* io_buffer = NULL;
-    t_io_request* io_request = NULL;
-    int partition_start_sector = 51400;
-    
-    io_buffer = aligned_kmalloc(BLOCK_SIZE, 16);
-    
-    for (i = 0; i < 512; i++)
-	{
-			io_buffer[i] = 'k';
-	}
-    
-    io_request = kmalloc(sizeof(t_io_request));
-    io_request->device_desc = system.device_desc;
-    io_request->sector_count= 1;
-    //io_request->lba= 2 + partition_start_sector;
-    io_request->lba= partition_start_sector;
-    io_request->io_buffer = io_buffer;
-    io_request->process_context = NULL;
-    _write_28_ahci(io_request);
-    kfree(io_request);
-    aligned_kfree(io_buffer);                                                      					
-}
+//void test_ahci()
+//{
+//	int i;
+//    char* io_buffer = NULL;
+//    t_io_request* io_request = NULL;
+//    int partition_start_sector = 51400;
+//    
+//    io_buffer = aligned_kmalloc(BLOCK_SIZE, 16);
+//    
+//    for (i = 0; i < 512; i++)
+//	{
+//			io_buffer[i] = 'k';
+//	}
+//    
+//    io_request = kmalloc(sizeof(t_io_request));
+//    io_request->device_desc = system.device_desc;
+//    io_request->sector_count= 1;
+//    //io_request->lba= 2 + partition_start_sector;
+//    io_request->lba= partition_start_sector;
+//    io_request->io_buffer = io_buffer;
+//    io_request->process_context = NULL;
+//    _write_28_ahci(io_request);
+//    kfree(io_request);
+//    aligned_kfree(io_buffer);                                                      					
+//}
 
 static int check_type(t_hba_port* port)
 {

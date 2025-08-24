@@ -157,6 +157,9 @@ loader:
 	cli
 	mov %ebx, MULTIBOOT_INFO
 	mov %eax, MULTIBOOT_MAGIC
+	
+	#mov $kmain, %ecx
+	#call %ecx 
 
 #Build the page map level 4.
     mov $PML4,%ebx
@@ -174,14 +177,14 @@ loader:
 	mov $L_DIR,%eax
 	mov $L_PAGE,%ecx
 	or $0b11,%ecx
-	mov $0x14,%ebx
+	mov $0x13,%ebx
 	call fill_page_dir
 	
 #Build the loader page table
 	mov $0x0,%eax
 	or $0b11,%eax
 	mov $L_PAGE,%ecx
-	mov $0x2601,%ebx
+	mov $0x2600,%ebx
 	call fill_page
 	
 #Build the kernel page directory pointer table.
@@ -233,7 +236,7 @@ loader:
     jmp	$0x08,$long_mode             			# Load CS with 64 bit segment and flush the instruction cache
     
 fill_page_dir:
-	mov $0x1,%edx
+	mov $0x0,%edx
 .loop_page_dir:
 	mov %ecx,(%eax)
 	add $0x4,%eax
@@ -249,22 +252,22 @@ fill_page:
 	mov $0x0,%edx
 .loop_page_table:
 	mov %eax,(%ecx)
-   add $0x4,%ecx
+    add $0x4,%ecx
 	mov $0x0,(%ecx)
-   add $0x4, %ecx
-   add $0x1000, %eax
-   add $0x1,%edx
-   cmp %ebx, %edx                		
-   jb .loop_page_table
-   ret    
+    add $0x4, %ecx
+    add $0x1000, %eax
+    add $0x1,%edx
+    cmp %ebx, %edx                		
+    jb .loop_page_table
+    ret    
          
 long_mode:
 .code64
 	pmode:
 	mov	$0x10,%ax	    	
-	mov	%ax,%ds
+#	mov	%ax,%ds
 	mov	%ax,%ss
-	mov	%ax,%es
+#	mov	%ax,%es
 	mov $(TSS+0x04),%rax
 	mov	%rax,TSS_ADD
 	mov $TSS_ADD,%rdx
@@ -301,6 +304,7 @@ long_mode:
 #moltiboot data
 	mov MULTIBOOT_INFO, %rdi
 	mov MULTIBOOT_MAGIC, %rsi
+	push    %rcx
     push 	%rdx
 	push  	%rsi                   	
    	push  	%rdi                    	

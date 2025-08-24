@@ -6,6 +6,12 @@ process_heap_virtual_address 0x200000000 (size: 8G - 15G)
 kernel_virtual_stack 0x3FFCFF000 (16G - 3M - 4k hole; size = 0x2000)
 user_virtual_stack  0x3FFCFC000 (16G - 3M - 4K hole - 8K - 4K hole;size 0x40000000)
 
+kernel_virtual_stack 0x3FFFFF000 (16G - 4k hole; size = 0x2000)
+user_virtual_stack  0x3FFFFC000 (16G - 4K hole - 8K - 4K hole;size 0x40000000)
+
+
+
+
 Reserved vitural memory for devices
 30000000 VIDEO MEMORY 0x300000
 30300000 8254x MEMORY 0x10000
@@ -15,11 +21,12 @@ Reserved vitural memory for devices
  
 Temp mapping
 kernel mapping 16G - 16G + 1M -> 1M - 3M
-loader mapping 3M - 38M -> 3M - 38M (1M for loader + 34MB for final master page table) 
+loader mapping 0M - 38M -> 0M - 38M (loader at 1M, 34MB for final master page table) 
 
 Final mapping
 kernel mapping 16G - 16G + 1M -> 1M - 3M
-kernel master page table 4M - 38MB (WROST CASE) Here ledt 1M hole to not overlap temp and final page tables
+kernel master page table 16G + 4M - 1M  (-) 16G + 38M - 1M -> 4M - 38M (WROST CASE) Here ledt 1M hole to not overlap temp and final page tables
+
 
 Master page table size
 33 MB for master page mapping 16G

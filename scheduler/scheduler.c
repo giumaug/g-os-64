@@ -12,6 +12,12 @@ void do_context_switch(struct t_process_context *current_process_context,
 		       struct t_processor_reg* processor_reg,
 		       struct t_process_context* new_process_context)
 {
+	
+	if (new_process_context->pid == 3)
+	{
+		new_process_context->pid = 3;
+	}
+	
 	*(system.process_info->tss.esp)=KERNEL_STACK;
 	//save current process state 
 	current_process_context->processor_reg.rax=processor_reg->rax;
@@ -214,8 +220,7 @@ void _sleep_and_unlock(t_spinlock_desc* lock)
 	t_spinlock_desc aa;
 	struct t_process_context* current_process;
 	SAVE_IF_STATUS
-	CLI
-	//printk("1");        
+	CLI     
 	current_process=system.process_info->current_process->val;
 	current_process->sleep_time=system.time;
 	t_llist_node* current_node=system.process_info->current_process;
@@ -242,7 +247,6 @@ void _awake(struct t_process_context *new_process)
 	CLI
 	CURRENT_PROCESS_CONTEXT(process_context);
 	new_process->sleep_time=(system.time-new_process->sleep_time>=1000) ? 1000 : (system.time-new_process->sleep_time);
-	//new_process->proc_status=RUNNING;
 	adjust_sched_queue(new_process);
 	//COULD ARRIVE AN ATA INTERRUPT DURING NETWORK FLUSH
 	if (process_context->pid != new_process->pid && new_process->proc_status == SLEEPING)
@@ -323,11 +327,6 @@ void _exit(int status)
 		next = ll_next(next);
 		next_process=next->val;
 	}
-//	if (current_process->elf_desc != NULL)
-//	{
-//		elf_loader_free(current_process->elf_desc);
-//		kfree(current_process->elf_desc);
-//	}
 	if (current_process->process_type == USERSPACE_PROCESS)
 	{
 		delete_mem_reg(current_process->process_mem_reg);
@@ -440,7 +439,8 @@ u32 _exec(char* path,char* argv[])
 	u32 frame_size = 0;
 	u32 process_size;
 	t_elf_desc* elf_desc;
-
+	u64 phy_page_addr;
+	
 	CURRENT_PROCESS_CONTEXT(current_process_context);
 	if (current_process_context->elf_desc == NULL)
 	{
@@ -494,11 +494,12 @@ u32 _exec(char* path,char* argv[])
 	if (current_process_context->process_type == KERNEL_THREAD)
 	{
 		current_process_context->process_mem_reg = create_mem_reg(PROC_VIRT_MEM_START_ADDR,PROC_VIRT_MEM_START_ADDR+process_size);
-		current_process_context->heap_mem_reg = create_mem_reg(HEAP_VIRT_MEM_START_ADDR,HEAP_VIRT_MEM_START_ADDR+HEAP_INIT_SIZE);
-		current_process_context->ustack_mem_reg = create_mem_reg(USER_STACK-USER_STACK_INIT_SIZE,USER_STACK);
+		current_process_context->heap_mem_reg = create_mem_reg(HEAP_VIRT_MEM_START_ADDR,HEAP_VIRT_MEM_START_ADDR+HEAP_SIZE);
+		current_process_context->ustack_mem_reg = create_mem_reg(USER_STACK-USER_STACK_SIZE,USER_STACK);
 		page_addr = buddy_alloc_page(system.buddy_desc,PAGE_SIZE);
 		map_vm_mem(current_process_context->page_pml4,(USER_STACK-PAGE_SIZE),FROM_VIRT_TO_PHY(page_addr),PAGE_SIZE,7);
-		system.buddy_desc->count[BLOCK_INDEX_FROM_PHY(FROM_VIRT_TO_PHY((u64)page_addr))]++;
+		phy_page_addr = FROM_VIRT_TO_PHY((u64)page_addr);
+		system.buddy_desc->count[BLOCK_INDEX(phy_page_addr)]++;
 		SWITCH_PAGE_DIR(FROM_VIRT_TO_PHY((current_process_context->page_pml4))) 
 	}
 	else
@@ -540,19 +541,7 @@ u32 _exec(char* path,char* argv[])
 		kfree(bk_area[k]);
 	}
 	kfree(bk_area);
-//--	SWITCH_TO_USER_MODE(stack_pointer)
-      //asm("mov $0x3FFCFF000, %rsp");
-    asm("mov $0x23,%rax;	      	   			            \
-           push %rax;");                
-      asm("mov	%ax,%ds;mov	%ax,%es;"); 
-	  asm("mov %0,%%rax;push %%rax;"::"r"(stack_pointer));
-      asm("mov $0x206,%rax;                                   \
-           push %rax;                                         \
-           mov $0x1b,%rax;      /*cs*/                        \
-           push %rax;                                         \
-           mov $0x40000000,%rax;  /*eip*/                       \
-           push %rax;");
-     asm("iretq;");
+    SWITCH_TO_USER_MODE(stack_pointer)
 	return 0;
 }
 

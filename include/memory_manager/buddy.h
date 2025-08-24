@@ -5,8 +5,8 @@
 #include "data_types/primitive_types.h"
 #include "memory_manager/general.h"
 
-#define BLOCK_INDEX(mem_addr) (mem_addr) / PAGE_SIZE
-#define BLOCK_INDEX_FROM_PHY(mem_addr) (mem_addr - BUDDY_START_ADDR - PHY_MEM_START_ADDR) / PAGE_SIZE
+#define BLOCK_INDEX(mem_addr) (((mem_addr) - (BUDDY_START_ADDR)) / PAGE_SIZE)
+//#define BLOCK_INDEX_FROM_PHY(virt_mem_addr)  BLOCK_INDEX((FROM_VIRT_TO_PHY(virt_mem_addr)))
 
 struct s_buddy_desc 
 {
@@ -24,7 +24,7 @@ void* buddy_alloc_page(t_buddy_desc* buddy, u64 mem_size);
 void buddy_free_page(t_buddy_desc* buddy, void* page_addr);
 void buddy_clean_mem(void* page_addr);
 u64 buddy_free_mem(t_buddy_desc* buddy);
-void buddy_check_mem_status();
+void buddy_check_mem_status(t_buddy_desc* buddy);
 void buddy_check_mem(t_buddy_desc* buddy, u64 mem_addr_to_check);
 
 #endif

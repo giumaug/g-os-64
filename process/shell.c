@@ -15,8 +15,6 @@ int main (int _argc, char* _argv[])
 	char c;
 	unsigned int index;
 	
-	//printf("g-shell v 0.1 \n");
-	//malloc(sizeof(char*) * (2));
 	printf("g-shell v 0.1 \n");
 	//check_free_mem();
 	while(1)
@@ -30,19 +28,16 @@ int main (int _argc, char* _argv[])
 		if (cmd[0] == 'c' && cmd[1] == 'd' && cmd[2]==' ')
 		{
 				cd(&cmd[3]);
-				//printf("\n");
 		}
 
 		else if (cmd[0] != '/' && !(cmd[0] == '.' && cmd[1] == '/'))
 		{
-			//printf("\n");
-			//printf("Command not found.");
-			//printf("\n");
+			printf("\n");
+			printf("Command not found.");
+			printf("\n");
 		}
 		else
 		{
-			//printf("1111111 %d \n",&len);
-			printf("1111111 %s \n",cmd);
 			if (cmd[0] == '/')
 			{
 				index = 1;
@@ -59,7 +54,6 @@ int main (int _argc, char* _argv[])
 			}
 
 			i = 0;
-			printf("222222 \n");
 			while (cmd[i] != NULL)
 			{
 				if(cmd[i] == ' ')
@@ -68,11 +62,8 @@ int main (int _argc, char* _argv[])
 				}
 				i++;
 			}
-		
-		    printf("333333 \n");
 			argv = malloc(sizeof(char*) * (argc + 2));
 			i = 0;
-			printf("4444444 \n");
 			for(k = 0;k <= argc;k++)
 			{
 				j = 0;
@@ -84,8 +75,7 @@ int main (int _argc, char* _argv[])
 				i++;
 				argv[k]=malloc(j + 1);
 			}
-			printf("555555 \n");
-
+			
 			i = 0;
 			j = 0;
 			for(k = 0;k <= argc;k++)
@@ -101,9 +91,7 @@ int main (int _argc, char* _argv[])
 				argv[k][j++] = '\0';
 			}
 			argv[argc + 1] = NULL;
-			printf("66666 \n");
 			pid = fork();
-			printf("777777 \n");
 			if (pid == 0)
 			{
 				child_pid = getpid();
@@ -123,7 +111,7 @@ int main (int _argc, char* _argv[])
 				if (!is_background)
 				{
 					pause();
-					check_free_mem();
+					//check_free_mem();
 					for(k = 0;k <= argc;k++)
 					{
 						free(argv[k]);

@@ -20,7 +20,8 @@ void init_lapic()
 	u32 val;
 	u32 lapic_id;
 	
-    map_vm_mem_static(LAPIC_BASE, PHY_LAPIC_BASE, PAGE_SIZE);
+    //map_vm_mem_static(LAPIC_BASE, PHY_LAPIC_BASE, PAGE_SIZE);
+    map_vm_mem(system.master_page_pml4, LAPIC_BASE, PHY_LAPIC_BASE, PAGE_SIZE, 3);
 	init_pit();
 	// Clear Task Priority register; this enables all LAPIC interrupts
 	val = read_reg(LAPIC_TPR);
@@ -153,7 +154,7 @@ void int_handler_lapic()
 	EOI_TO_LAPIC
 	//SWITCH_DS_TO_KERNEL_MODE
 	process_context = system.process_info->current_process->val;
-
+	
 	system.time += QUANTUM_DURATION;
 	if (system.int_path_count > 0)
 	{
@@ -311,12 +312,16 @@ EXIT_HANDLER:;
 			buddy_free_page(system.buddy_desc,FROM_PHY_TO_VIRT(_old_process_context.phy_kernel_stack));     
 		}                                                                                                       
 		RESTORE_PROCESSOR_REG                                                                                   
-		EXIT_SYSCALL_HANDLER                                                                                    
+//---		EXIT_SYSCALL_HANDLER
+        asm("pop %rbp;iretq;");                                                                               
 	}                                                                                                          	
 	else                                                                                                       	
 	{                                                                                                               
 		RESTORE_PROCESSOR_REG                                                                           
-		RET_FROM_INT_HANDLER                                                                                    
+//---		RET_FROM_INT_HANDLER
+		asm("movq %rbp,%rsp;");
+		asm("popq %rbp;");
+		asm("iretq");
 	}
 	
 	

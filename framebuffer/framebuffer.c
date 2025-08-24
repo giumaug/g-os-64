@@ -28,7 +28,8 @@ void init_fb(multiboot_info_t* mbd)
 	fb_text_area = fb_text_width * fb_text_height;
 
 	fb_size = fb_width * fb_height * fb_bytes;
-	map_vm_mem_static(fb_virt_addr, fb_phy_addr, (fb_size + PAGE_SIZE));
+	//map_vm_mem_static(fb_virt_addr, fb_phy_addr, (fb_size + PAGE_SIZE));
+	map_vm_mem(system.master_page_pml4, fb_virt_addr, fb_phy_addr, (fb_size + PAGE_SIZE), 3);
 	
 	for (i = 0; i < fb_size; i++)
 	{
@@ -38,7 +39,19 @@ void init_fb(multiboot_info_t* mbd)
 
 static void put_pixel(int x, int y, u8 c)
 {
+
     unsigned int pix_offset = (4 * x) + (4 * y) * fb_width;
+
+/*    
+    if ((fb + pix_offset) > (fb + fb_size)) 
+    {
+		panic();
+	}
+	if (fb != 0x30000000)
+	{
+		panic();
+	}
+*/
     
     *((char*)(fb + pix_offset)) = (0xff * c);
     *((char*)(fb + pix_offset + 1)) =  (0xff * c);

@@ -1,10 +1,3 @@
-$disk0_image="/home/peppe/Scrivania/g-os/img/c.img"
-run-command-file /opt/simics-package/simics-qsp-x86-6.0.61/targets/qsp-x86/qsp-hdd-boot.simics
-enable-debugger
-add-symbol-file /home/peppe/Scrivania/g-os/kernel.bin
-bp.source_line.break filename = network.c line-number = 68
-bp.source_location.break exception
-
 ---LINUX---
 $disk0_image="/opt/simics/simics-qsp-clear-linux-6.0.14/targets/qsp-x86/images/cl-b28910-v2.craff"
 run-command-file /opt/simics/simics-qsp-x86-6.0.67/targets/qsp-x86/qsp-hdd-boot.simics
@@ -15,55 +8,6 @@ connect-real-network-bridge
 @yyy.rn.tx_bandwidth=0
 @yyy.rn.tx_packet_rate=0
 
----G-OS---
-$disk0_image="/home/peppe/Desktop/g-os-grub2/g-os/img/c.img"
-run-command-file /opt/simics/simics-qsp-x86-6.0.67/targets/qsp-x86/qsp-hdd-boot.simics
-connect-real-network-bridge
-enable-debugger
-add-symbol-file /home/peppe/Desktop/g-os-grub2/g-os/kernel.bin
-bp.source_location.break panic
-bp.source_location.break kmain
-bp.source_line.break filename = vm.c line-number = 413
-bp.source_location.break process_0
-bp.source_location.break syscall_handler
-bp.source_location.break init_virtual_memory
-
-@files = conf.board.disk0.hd_image.files
-@files[-1][1] = "rw"
-
-enable-reverse-execution
-
-
-@xxx=conf.board.mb.sb.phy
-@xxx.tx_bandwidth=0
-@yyy=conf.rn0
-@yyy.rn.tx_bandwidth=0
-@yyy.rn.tx_packet_rate=0
-bp.source_location.break panic
-bp.source_line.break filename = network.c line-number = 62
-
-bp.source_line.break filename = ext2.c line-number = 131
-bp.source_line.break filename = ext2.c line-number = 114
-
-bp.source_location.break add_entry_to_dir
-bp.source_line.break filename = tcp.c line-number = 945
-bp.source_location.break panic
-bp.source_location.break send_packet_tcp
-bp.source_location.break _sendto
-bp.source_location.break init_8254x
-bp.source_location.break int_handler_i8254x
-
-@files = conf.board.disk0.hd_image.files
-@files[-1][1] = "rw"
-bp.source_location.break _write_28_ahci
-bp.source_location.break test_ahci
-bp.source_line.break filename = ahci.c line-number = 310
-bp.source_location.break int_handler_ahci
-bp.source_location.break kmain
-bp.source_location.break panic
-board.mb.sb.sata2.log-level 4
-board.disk0.sata.log-level 4
-log-setup log.log
 
 //Configurazione con scheda alternativa.
 $disk0_image="/home/peppe/Scrivania/g-os-grub2/g-os/img/c.img"
@@ -81,32 +25,9 @@ board.mb.sb.phy.log-level 4
 default_eth_switch0.log-level 4
 log-setup logos.log
 
+COMANDI:
 
-bp.source_location.break int_handler_ahci
-bp.source_location.break __read_write_28_ahci
-bp.source_line.break filename = ahci.c line-number = 148
-
-bp.source_line.break filename = console.c line-number = 215
-bp.source_location.break int_handler_generic_49
-bp.source_line.break filename = console.c line-number = 100
-bp.source_location.break draw_char_fb
-bp.source_line.break filename = framebuffer.c line-number = 150
-bp.source_location.break int_handler_pit
-bp.source_location.break write_out_buf
-bp.source_location.break int_handler_kbc
-bp.source_line.break filename = process_0.c line-number = 55
-bp.source_location.break init_fb
-
-bp.source_line.break filename = kmain.c line-number = 69
-
-bp.source_location.break kmain
-bp.source_line.break filename = lapic.c line-number = 65
-bp.source_location.break int_handler_generic
-bp.source_line.break filename = lapic.c line-number = 65
-bp.source_location.break int_handler_lapic
-bp.source_location.break init_timer
-bp.source_location.break kmain
-bp.source_line.break filename = lapic.c line-number = 61
+enable-reverse-execution
 
 tolgo break point: bp.delete 2
 performance system-perfmeter
@@ -141,10 +62,12 @@ memoria
 x 0xc0000553 4
 x p:0xc0000553 4 indirizzo fisico
 
+verifica conversione indirizzo virtuale a fisico
+board.mb.cpu0.core[0][0].tablewalk 0x3ffcfbeeb
+
 conversione indirizzo virtuale a fisico: lp2 <indirizzo_virtuale>
 
 break point fisico b 0x0
-
 
 Inspection
 list-objects
@@ -197,39 +120,9 @@ Networking
 ifconfig enp0s25 192.168.5.65 netmask 255.255.255.0 up
 route add default gw 192.168.5.60 enp0s25
 
-
 tcpdump -U -XX -vv -e -nn -i any host 46.105.60.74 and port 11211
 
 tcpdump -U -XX -vv -e -nn -i virbr0
-
-$disk0_image="/home/peppe/Desktop/g-os-grub2/g-os/img/c.img"
-run-command-file /opt/simics/simics-qsp-x86-6.0.67/targets/qsp-x86/qsp-hdd-boot.simics
-connect-real-network-bridge
-enable-debugger
-add-symbol-file /home/peppe/Desktop/g-os-grub2/g-os/kernel.bin
-enable-reverse-execution
-rexec-limit 10240 0
-board.mb.cpu0.core[0][0]->current_virtual_context = "board.cell_context"
-bp.memory.break v:0xc0003726
-bp.memory.break v:0xc0003c06
-@xxx=conf.board.mb.sb.phy
-@xxx.tx_bandwidth=0
-@yyy=conf.rn0
-@yyy.rn.tx_bandwidth=0
-@yyy.rn.tx_packet_rate=0
-
-
-5000 request:88 vs 198x3
-
-linux 8 vs 130
-
-arch 8 vs 57
-
-g-os 1000  214sec
-g-os 200x5 20sec
-
-linux 1000 120sec
-linux 200x5 8sec
 
 -------------
 $disk0_image="/home/peppe/Desktop/g-os-grub2/g-os-64/img/c.img"
@@ -243,31 +136,28 @@ bp.source_location.break panic
 @yyy=conf.rn0
 @yyy.rn.tx_bandwidth=0
 @yyy.rn.tx_packet_rate=0
-bp.source_line.break filename  = malloc.c line-number = 33
-bp.source_location.break init_malloc
-
-add-symbol-file /home/peppe/Desktop/g-os-grub2/g-os-64/kernel.bin
-add-symbol-file /home/peppe/Desktop/g-os-grub2/g-os-64/process/shell
-bp.source_location.break page_fault_handler
-
-bp.source_line.break filename = buddy.c line-number = 214
+bp.source_location.break init_console
 
 
-bp.source_line.break filename  = syscall_handler.c line-number = 84
-bp.source_line.break filename = kmain.c line-number = 131
-bp.source_line.break filename = lapic.c line-number = 287
-
-bp.source_location.break init_malloc
-
-bp.source_line.break filename  = scheduler.c line-number = 555
-bp.source_line.break filename  = kmain.c line-number = 126
+bp.source_line.break filename = syscall_handler.c line-number = 121
 
 
-bp.source_location.break _write_char
+add-symbol-file /home/peppe/Desktop/g-os-grub2/g-os-64/process/ht
+bp.source_location.break  process_request
+bp.source_line.break filename = ht.c line-number = 220
+
+
+bp.source_location.break init_kmallocs
+bp.source_line.break filename = scheduler.c line-number = 500
+
+add-symbol-file /home/peppe/Desktop/g-os-grub2/g-os-64/process/ht
+bp.source_line.break filename  = unistd.c line-number = 23
 
 bp.source_location.break _exec
 board.mb.cpu0.log-level 4
 log-setup logos.log
+
+board.mb.phys_mem.memory-map
 
 
 
