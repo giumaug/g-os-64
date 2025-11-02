@@ -66,21 +66,22 @@ int main()
 		age++;
 		if ((age % 100) == 0)
 		{
+			//flush_inode_cache();
 			check_free_mem();
 		}
 		client_len = sizeof(client_address);
 		client_sockfd = accept(server_sockfd,(struct sockaddr *)&client_address, &client_len);
 
 		request_count++;
-		if ((request_count % 1000) == 0)
+		if ((request_count % 100) == 0)
 		{
 			printf("accepted request %d \n",request_count++);
 		}
 
 		if(fork() == 0) 
 		{
-			//process_request(client_sockfd);
-			process_request_2(client_sockfd);
+			process_request(client_sockfd);
+			//process_request_2(client_sockfd);
 			//process_request_3(client_sockfd);
 			close_socket(client_sockfd);
 			exit(0);

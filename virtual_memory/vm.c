@@ -196,17 +196,17 @@ void* clone_vm_process(void* parent_page_pml4,u64 process_type, u64 kernel_stack
 	buddy_clean_mem(page_ptr);
 	page_pml4[0] = FROM_VIRT_TO_PHY((u64)page_ptr) | 7;
 	
-	page_dir = buddy_alloc_page(system.buddy_desc,0x1000);
-	buddy_clean_mem(page_dir);
-	page_ptr[0] = FROM_VIRT_TO_PHY((u64)page_dir) | 7;
+	//page_dir = buddy_alloc_page(system.buddy_desc,0x1000);
+	//buddy_clean_mem(page_dir);
+	//page_ptr[0] = FROM_VIRT_TO_PHY((u64)page_dir) | 7;
 	
-	page_table = buddy_alloc_page(system.buddy_desc, 0x1000);
-	buddy_clean_mem(page_table);
-	page_dir[0] = FROM_VIRT_TO_PHY((u64)page_table) | 7;
+	//page_table = buddy_alloc_page(system.buddy_desc, 0x1000);
+	//buddy_clean_mem(page_table);
+	//page_dir[0] = FROM_VIRT_TO_PHY((u64)page_table) | 7;
 	
 	parent_page_ptr = ALIGN_4K(FROM_PHY_TO_VIRT(((u64*)parent_page_pml4)[0]));
-	parent_page_dir = ALIGN_4K(FROM_PHY_TO_VIRT(((u64*)parent_page_ptr)[0]));
-	parent_page_table = ALIGN_4K(FROM_PHY_TO_VIRT(((u64*)parent_page_dir)[0]));
+	//parent_page_dir = ALIGN_4K(FROM_PHY_TO_VIRT(((u64*)parent_page_ptr)[0]));
+	//parent_page_table = ALIGN_4K(FROM_PHY_TO_VIRT(((u64*)parent_page_dir)[0]));
 		
 	map_vm_mem(page_pml4, (KERNEL_STACK-KERNEL_STACK_SIZE), kernel_stack_addr, KERNEL_STACK_SIZE, 3);
 	if (process_type == USERSPACE_PROCESS)
@@ -273,15 +273,21 @@ void* clone_vm_process(void* parent_page_pml4,u64 process_type, u64 kernel_stack
 	
 void free_vm_process(struct t_process_context* process_context)
 {
+	u64* page_pml4 = NULL;
+	u64* page_ptr = NULL;
+	
 	SAVE_IF_STATUS
-	CLI	
+	CLI
+	page_pml4 = process_context->page_pml4;
+	page_ptr = ALIGN_4K(FROM_PHY_TO_VIRT(((u64*)page_pml4)[0]));
 	if (process_context->process_type==USERSPACE_PROCESS)
 	{
 		free_vm_process_user_space(process_context);
 	}
-	umap_vm_mem(process_context->page_pml4, 0, 0x100000, 1);
-	umap_vm_mem(process_context->page_pml4, KERNEL_STACK, KERNEL_STACK_SIZE, 1);
-	buddy_free_page(system.buddy_desc,process_context->page_pml4);
+	//umap_vm_mem(page_pml4, 0, 0x100000, 1);
+	umap_vm_mem(page_pml4, KERNEL_STACK, KERNEL_STACK_SIZE, 1);
+	buddy_free_page(system.buddy_desc,page_pml4);
+	buddy_free_page(system.buddy_desc,page_ptr);
 	RESTORE_IF_STATUS
 }
 	
@@ -297,8 +303,8 @@ void free_vm_process_user_space(struct t_process_context* process_context)
 	CLI
 	page_pml4 = process_context->page_pml4;
 	page_ptr = ALIGN_4K(FROM_PHY_TO_VIRT(((u64*)page_pml4)[0]));
-	page_dir = ALIGN_4K(FROM_PHY_TO_VIRT(((u64*)page_ptr)[0]));
-	page_table = ALIGN_4K(FROM_PHY_TO_VIRT(((u64*)page_dir)[0]));
+	//page_dir = ALIGN_4K(FROM_PHY_TO_VIRT(((u64*)page_ptr)[0]));
+	//page_table = ALIGN_4K(FROM_PHY_TO_VIRT(((u64*)page_dir)[0]));
 		
 	for (i = 1; i <= 15; i++)
 	{
@@ -346,7 +352,8 @@ void free_vm_process_user_space(struct t_process_context* process_context)
 	}
 	RESTORE_IF_STATUS
 }
-	
+
+//Map and umap manage 128G memory with address in the same giga only.	
 int map_vm_mem(u64* page_pml4, u64 vir_mem_addr, u64 phy_mem_addr, u64 mem_size, u32 flags)
 {
 	unsigned int i, j, dir_num;
@@ -432,6 +439,10 @@ int map_vm_mem(u64* page_pml4, u64 vir_mem_addr, u64 phy_mem_addr, u64 mem_size,
 		}
 		ret = 0;
 	}
+	else
+	{
+		panic();
+	}
 	return ret;
 }
 	
@@ -448,11 +459,13 @@ int umap_vm_mem(u64* page_pml4, u64 vir_mem_addr, u64 mem_size, u32 flush)
 	u64 first_pt;
 	u64 last_pt;
 	u64 last_pd;
+	int free_page = 0;
 	int ret = -1;
 	
-	if ((vir_mem_addr / G_PHY_MEM_SIZE) == ((vir_mem_addr + mem_size) / G_PHY_MEM_SIZE))
+	if (((vir_mem_addr & 0x7FC0000000) >> 30) == (((vir_mem_addr + mem_size) & 0x7FC0000000) >> 30))
 	{
-		dir_num = vir_mem_addr / G_PHY_MEM_SIZE;
+		//dir_num = vir_mem_addr / G_PHY_MEM_SIZE;
+		dir_num = (vir_mem_addr & 0x7FC0000000) >> 30;
 		page_ptr = ALIGN_4K(FROM_PHY_TO_VIRT(page_pml4[0]));
 		page_dir = ALIGN_4K(FROM_PHY_TO_VIRT(page_ptr[dir_num]));
 		
@@ -460,7 +473,7 @@ int umap_vm_mem(u64* page_pml4, u64 vir_mem_addr, u64 mem_size, u32 flush)
 		if ((mem_size % 4096) > 0) page_count++;
 		pd_count = page_count / 512;
 		if ((page_count % 512) > 0) pd_count++;
-		first_pd = vir_mem_addr >> 21;
+		first_pd = (vir_mem_addr & 0x3FFFFFFF)  >> 21;
 		first_pt = (vir_mem_addr & 0x1FFFFF) >> 12;
 		last_pt = ((vir_mem_addr + mem_size - 1) & 0x1FFFFF) >> 12;
 		last_pd = pd_count + first_pd;
@@ -489,14 +502,48 @@ int umap_vm_mem(u64* page_pml4, u64 vir_mem_addr, u64 mem_size, u32 flush)
 				start = 0;
 				end = 512;
 			}
-
-			if ((start == 0 && end == 512) || flush) 
+			for (j = start; j < end; j++)
+			{
+				page_table[j] = 0;
+			}
+			
+			free_page = 0;
+			for (j = 0; j < 512; j++)
+			{
+				if (page_table[j] == 0)
+				{
+					free_page++;
+				}
+			}
+			if (free_page == 512 || flush)
 			{
 				buddy_free_page(system.buddy_desc, page_table);
 				((u64*)page_dir)[i] = 0;
 			}
+//			if ((start == 0 && end == 512) || flush) 
+//			{
+//				buddy_free_page(system.buddy_desc, page_table);
+//				((u64*)page_dir)[i] = 0;
+//			}
+		}
+		free_page = 0;
+		for (j = 0; j < 512; j++)
+		{
+			if (page_dir[j] == 0)
+			{
+				free_page++;
+			}
+		}
+		if (free_page == 512)
+		{
+			buddy_free_page(system.buddy_desc, page_dir);
+			page_ptr[dir_num] = 0;
 		}
 		ret = 0;
+	}
+	else
+	{
+		panic();
 	}
 	return ret;
 }
@@ -588,7 +635,7 @@ void page_fault_handler()
 	}
 	else
 	{
-		printk("\n +++Segmentation fault. \n");
+		//printk("\n +++Segmentation fault. \n");
 		panic();
 		//_exit(0);
 		//on_exit_action=2;

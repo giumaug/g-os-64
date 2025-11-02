@@ -2,9 +2,9 @@
 #include "memory_manager/kmalloc.h"
 #include "data_types/hashtable.h"
 
-static void* hashtable_search(t_hashtable* hashtable,u32 key,int remove)
+static void* hashtable_search(t_hashtable* hashtable,u64 key,int remove)
 {
-	u32 index;
+	u64 index;
 	t_bucket_data* bucket_data;
 	t_llist_node* next;
 	t_llist_node* sentinel;
@@ -132,19 +132,19 @@ void hashtable_dispose(t_hashtable* hashtable)
 	kfree(hashtable);
 }
 
-void* hashtable_get(t_hashtable* hashtable,u32 key)
+void* hashtable_get(t_hashtable* hashtable,u64 key)
 {
 	return hashtable_search(hashtable,key,FALSE);
 }
 
-void* hashtable_remove(t_hashtable* hashtable,u32 key)
+void* hashtable_remove(t_hashtable* hashtable,u64 key)
 {
 	return hashtable_search(hashtable,key,TRUE);
 }
 
-void hashtable_put(t_hashtable* hashtable,u32 key,void* value)
+void hashtable_put(t_hashtable* hashtable,u64 key,void* value)
 {
-	u32 index;
+	u64 index;
 	t_bucket_data* bucket_data;
 	
 	if ((long)((hashtable->elements+1)*100)/(long)hashtable->size>LOAD_FACTOR)

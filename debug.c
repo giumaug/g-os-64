@@ -3,9 +3,10 @@
 #include "debug.h"
 #include "timer.h"
 
+unsigned int catch_index = 0 ;
 unsigned int collect_mem=0;
-//u64 collected_mem[50005];
-u64 collected_mem[1000];
+u64 collected_mem[60005];
+//u64 collected_mem[1000];
 unsigned int collected_mem_index=0;
 unsigned int allocated_block=0;
 unsigned int start_count = 0;
@@ -14,6 +15,7 @@ static int age=0;
 void add_tcp_conn(u32 port,t_tcp_conn_desc* conn);
 void remove_tcp_conn(u32 port);
 void check_tcp_conn();
+void check_leak();
 
 void _reg_time(long long *timeboard,int* counter)
 {
@@ -147,7 +149,9 @@ void _is_phy_page_used(u64 phy_page_addr)
 void collect_mem_alloc(u64 page_addr)
 {
 	unsigned int i=0;
-
+	unsigned int zero = 0;
+	unsigned int not_zero = 0;
+	
 	if (collect_mem == 1)
 	{
 		for (i = collected_mem_index; i < 50000;i++)
@@ -164,12 +168,28 @@ void collect_mem_alloc(u64 page_addr)
 				panic();
 			}
 		}
+		
 		collected_mem_index++;
-		if (collected_mem_index > 49999)
+		if (collected_mem_index > 59999)
 		{
 			collected_mem_index = 0;
 			printk("reset counter!!!! \n");
-			//panic();
+			for (i = 0; i < 59999; i++)
+			{
+				if(collected_mem[i] != 0)
+				{
+					not_zero++;
+					if (i > 8000)
+					{
+						panic();
+					}
+				}
+				else
+				{
+					zero++;
+				}
+			}
+			panic();
 		}
 		collected_mem[collected_mem_index] = page_addr;
 	}
@@ -211,7 +231,7 @@ void collect_mem_free(u64 page_addr)
 
 	if (collect_mem == 1)
 	{
-		for (i = 0; i < 50000; i++)
+		for (i = 0; i < 60000; i++)
 		{
 			if (collected_mem[i] == page_addr)
 			{
@@ -238,11 +258,7 @@ void check_leak()
 		{
 			xxx++;
 			index = i;
-			printk(" index is %d ",index);
-			if (index == 20446)
-			{
-				printk("mem is %d \n",collected_mem[index]);	
-			}
+			//printk(" index is %d ",index);
 		}
 	}
 	printk("\n not released count %d \n",xxx);
@@ -251,9 +267,9 @@ void check_leak()
 
 void panic()
 {
-	printk("\n");
-	printk("Kernel panic!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-	printk("\n");
+	//printk("\n");
+	//printk("Kernel panic!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+	//printk("\n");
 	//while(1);
 }
 

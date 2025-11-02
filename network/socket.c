@@ -151,6 +151,11 @@ int _recvfrom(int sockfd,unsigned char* src_ip,unsigned char* src_port,void* dat
 	unsigned int _src_ip;
 	unsigned int _src_port;
 	struct t_process_context* process_context = NULL;
+	
+	if (data_len == 0)
+	{
+		panic();
+	}
 
 	CURRENT_PROCESS_CONTEXT(process_context);
 	socket = hashtable_get(process_context->socket_desc,sockfd);

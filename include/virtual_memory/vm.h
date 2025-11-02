@@ -17,10 +17,10 @@
 #define USER_STACK_SIZE 0x40000000ULL
 
 #define PAGE_IN_MEMORY 	0b001
-#define PAGE_OUT_MEMORY  0b000
+#define PAGE_OUT_MEMORY 0b000
 #define PAGE_READ 	    0b000
 #define PAGE_WRITE	    0b010
-#define USER		        0b100
+#define USER		    0b100
 #define SUPERUSER	    0b000    
 
 #define FROM_VIRT_TO_PHY(addr) (addr) - (VIRT_MEM_START_ADDR) + (PHY_MEM_START_ADDR)

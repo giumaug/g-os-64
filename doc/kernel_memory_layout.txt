@@ -20,12 +20,12 @@ Reserved vitural memory for devices
 30313000 LAPIC 0x1000
  
 Temp mapping
-kernel mapping 16G - 16G + 1M -> 1M - 3M
+kernel mapping 16G - 16G + 2M -> 1M - 3M
 loader mapping 0M - 38M -> 0M - 38M (loader at 1M, 34MB for final master page table) 
 
 Final mapping
 kernel mapping 16G - 16G + 1M -> 1M - 3M
-kernel master page table 16G + 4M - 1M  (-) 16G + 38M - 1M -> 4M - 38M (WROST CASE) Here ledt 1M hole to not overlap temp and final page tables
+kernel master page table 16G + 4M (-) 16G + 38M -> 4M - 38M (WROST CASE)
 
 
 Master page table size

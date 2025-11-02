@@ -28,12 +28,12 @@ static t_tcp_snd_queue* tcp_snd_queue_init(u32 size)
 
 	tcp_snd_queue = kmalloc(sizeof(t_tcp_snd_queue));
 	tcp_snd_queue->buf = buddy_alloc_page(system.buddy_desc,TCP_SND_SIZE);
-	tcp_snd_queue->wnd_min = 4293967296; //1
+	tcp_snd_queue->wnd_min = 1; //4293967296; 
 	tcp_snd_queue->wnd_size = SMSS;
 	tcp_snd_queue->cur = 1;
 	tcp_snd_queue->buf_size = TCP_SND_SIZE;
 	//to inizialize to random seq_num
-	tcp_snd_queue->nxt_snd = 4293967296; //1
+	tcp_snd_queue->nxt_snd = 1; //4293967296; 
 	tcp_snd_queue->pnd_data = 0;
 	return tcp_snd_queue;
 }
@@ -1004,11 +1004,6 @@ static void flush_data(t_tcp_conn_desc* tcp_conn_desc,u32 data_to_send,u32 ack_n
 	u32 offset;
 	u32 seq_num;
 
-	if (data_to_send > 100000)
-	{
-		panic();
-	}
-
 	tcp_queue = tcp_conn_desc->snd_queue;
 	seq_num = indx;
 	if (data_to_send > 0)
@@ -1137,7 +1132,12 @@ int send_packet_tcp(u32 src_ip,u32 dst_ip,u16 src_port,u16 dst_port,u32 wnd_size
 	int ret = NULL;
 	char* tcp_header = NULL;
 	u32 tcp_header_len;
-
+	
+	if (ack_num == 2607383063 )
+	{
+		panic();
+	}
+	
 	if (flags & FLG_SYN)
 	{
 		tcp_header_len = HEADER_TCP + 4;

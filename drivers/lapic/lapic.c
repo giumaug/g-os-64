@@ -312,16 +312,13 @@ EXIT_HANDLER:;
 			buddy_free_page(system.buddy_desc,FROM_PHY_TO_VIRT(_old_process_context.phy_kernel_stack));     
 		}                                                                                                       
 		RESTORE_PROCESSOR_REG                                                                                   
-//---		EXIT_SYSCALL_HANDLER
+        EXIT_SYSCALL_HANDLER
         asm("pop %rbp;iretq;");                                                                               
 	}                                                                                                          	
 	else                                                                                                       	
 	{                                                                                                               
 		RESTORE_PROCESSOR_REG                                                                           
-//---		RET_FROM_INT_HANDLER
-		asm("movq %rbp,%rsp;");
-		asm("popq %rbp;");
-		asm("iretq");
+        RET_FROM_INT_HANDLER
 	}
 	
 	

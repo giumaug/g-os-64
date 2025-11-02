@@ -14,7 +14,7 @@
 #define CLI asm ("cli");
 #define EXIT_SYSCALL_HANDLER asm("pop %rbp;iretq;");
 
-#define SAVE_PROCESSOR_REG asm("push %r8");                            \
+#define SAVE_PROCESSOR_REG asm("push %r8");                           \
 				asm("push %r9");                                      \
 				asm("push %r10");                                     \
 				asm("push %r11");                                     \
@@ -28,80 +28,80 @@
                 asm("push %rdx");                                     \
                 asm("push %rcx");                                     \
                 asm("push %rbx");                                     \
-                asm("movq %%rax, %0;":"=r"(processor_reg.rax));        \
+                asm("movq %%rax, %0;":"=r"(processor_reg.rax));       \
                 asm("pop %rbx");                                      \
-                asm("movq %%rbx, %0;":"=r"(processor_reg.rbx));        \
+                asm("movq %%rbx, %0;":"=r"(processor_reg.rbx));       \
                 asm("pop %rcx");                                      \
-                asm("movq %%rcx, %0;":"=r"(processor_reg.rcx));        \
+                asm("movq %%rcx, %0;":"=r"(processor_reg.rcx));       \
                 asm("pop %rdx");                                      \
-                asm("movq %%rdx, %0;":"=r"(processor_reg.rdx));        \
+                asm("movq %%rdx, %0;":"=r"(processor_reg.rdx));       \
                 asm("pop %rsi");                                      \
-                asm("movq %%rsi, %0;":"=r"(processor_reg.rsi));        \
+                asm("movq %%rsi, %0;":"=r"(processor_reg.rsi));       \
                 asm("pop %rdi");                                      \
-                asm("movq %%rdi, %0;":"=r"(processor_reg.rdi));        \
+                asm("movq %%rdi, %0;":"=r"(processor_reg.rdi));       \
                 asm("pop %rbp");                                      \
-                asm("movq %%rbp, %0;":"=r"(processor_reg.rsp));        \
-                asm("pop %r8");                                       \
-                asm("movq %%r8, %0;":"=r"(processor_reg.r8));          \
-                asm("pop %r9");                                       \
-                asm("movq %%r9, %0;":"=r"(processor_reg.r9));          \
-                asm("pop %r10");                                      \
-                asm("movq %%r10, %0;":"=r"(processor_reg.r10));        \
-                asm("pop %r11");                                      \
-                asm("movq %%r11, %0;":"=r"(processor_reg.r11));       \
+                asm("movq %%rbp, %0;":"=r"(processor_reg.rsp));       \
+                asm("pop %r15");                                      \
+                asm("movq %%r15, %0;":"=r"(processor_reg.r15));       \
+                asm("pop %r14");                                      \
+                asm("movq %%r14, %0;":"=r"(processor_reg.r14));       \
+                asm("pop %r13");                                      \
+                asm("movq %%r13, %0;":"=r"(processor_reg.r13));       \
                 asm("pop %r12");                                      \
                 asm("movq %%r12, %0;":"=r"(processor_reg.r12));       \
-                asm("pop %r13");                                      \
-                asm("movq %%r13, %0;":"=r"(processor_reg.r13));        \
-                asm("pop %r14");                                      \
-                asm("movq %%r14, %0;":"=r"(processor_reg.r14));        \
-                asm("pop %r15");                                      \
-                asm("movq %%r15, %0;":"=r"(processor_reg.r15));
+                asm("pop %r11");                                      \
+                asm("movq %%r11, %0;":"=r"(processor_reg.r11));       \
+                asm("pop %r10");                                      \
+                asm("movq %%r10, %0;":"=r"(processor_reg.r10));       \
+                asm("pop %r9");                                       \
+                asm("movq %%r9, %0;":"=r"(processor_reg.r9));         \
+                asm("pop %r8");                                       \
+                asm("movq %%r8, %0;":"=r"(processor_reg.r8));
                  
 // PUSH AND POP REGITERS ON STACK TO AVIOD INLINE ASM DIRTIES THEM
-#define RESTORE_PROCESSOR_REG asm volatile ("" ::: "memory"); \
-                asm ("mov %0,%%rsp;"::"r"(_processor_reg.rsp)); \
-                asm ("movq %0,%%rax;"::"r"(_processor_reg.rax));  \
-                asm ("push %rax;");                              \
-                asm ("movq %0,%%rbx;"::"r"(_processor_reg.rbx));  \
-                asm ("push %rbx;");                              \
-                asm ("movq %0,%%rcx;"::"r"(_processor_reg.rcx));  \
-                asm ("push %rcx;");                              \
-                asm ("movq %0,%%rdx;"::"r"(_processor_reg.rdx));  \
-                asm ("push %rdx;");                              \
-                asm ("movq %0,%%rsi;"::"r"(_processor_reg.rsi));  \
-                asm ("push %rsi;");                              \
-                asm ("movq %0,%%rdi;"::"r"(_processor_reg.rdi));  \
-                asm ("push %rdi;");                               \
-                asm ("movq %0,%%r8;"::"r"(_processor_reg.r8));    \
-                asm ("push %r8;");                               \
-                asm ("movq %0,%%r9;"::"r"(_processor_reg.r9));    \
-                asm ("push %r9;");                     \
-                asm ("movq %0,%%r10;"::"r"(_processor_reg.r10));  \
-                asm ("push %r10;");                              \
-                asm ("movq %0,%%r11;"::"r"(_processor_reg.r11));  \
-                asm ("push %r11;");                              \
-                asm ("movq %0,%%r12;"::"r"(_processor_reg.r12));  \
-                asm ("push %r12;");                              \
-                asm ("movq %0,%%r13;"::"r"(_processor_reg.r13));  \
-                asm ("push %r13;");                              \
-                asm ("movq %0,%%r14;"::"r"(_processor_reg.r14));  \
-                asm ("push %r14;");                              \
-                asm ("movq %0,%%r15"::"r"(_processor_reg.r15));\
-                asm ("push %r15;");                               \
-                asm ("pop %r15;");                                \
-                asm ("pop %r14;");                                \
-                asm ("pop %r13;");                                \
-                asm ("pop %r12;");                                \
-                asm ("pop %r11;");                                \
-                asm ("pop %r10;");                                \
-                asm ("pop %r9;");                                 \
-                asm ("pop %r8;");                                 \
-				asm ("pop %rdi;");                                \
-				asm ("pop %rsi;");                                \
-				asm ("pop %rdx;");                                \
-				asm ("pop %rcx;");                                \
-				asm ("pop %rbx;");                                \
+#define RESTORE_PROCESSOR_REG asm volatile ("" ::: "memory");         \
+                asm ("mov %0,%%rsp;"::"r"(_processor_reg.rsp));       \
+                asm ("movq %0,%%rax;"::"r"(_processor_reg.rax));      \
+                asm ("push %rax;");                                   \
+                asm ("movq %0,%%rbx;"::"r"(_processor_reg.rbx));      \
+                asm ("push %rbx;");                                   \
+                asm ("movq %0,%%rcx;"::"r"(_processor_reg.rcx));      \
+                asm ("push %rcx;");                                   \
+                asm ("movq %0,%%rdx;"::"r"(_processor_reg.rdx));      \
+                asm ("push %rdx;");                                   \
+                asm ("movq %0,%%rsi;"::"r"(_processor_reg.rsi));      \
+                asm ("push %rsi;");                                   \
+                asm ("movq %0,%%rdi;"::"r"(_processor_reg.rdi));      \
+                asm ("push %rdi;");                                   \
+                asm ("movq %0,%%r8;"::"r"(_processor_reg.r8));        \
+                asm ("push %r8;");                                    \
+                asm ("movq %0,%%r9;"::"r"(_processor_reg.r9));        \
+                asm ("push %r9;");                                    \
+                asm ("movq %0,%%r10;"::"r"(_processor_reg.r10));      \
+                asm ("push %r10;");                                   \
+                asm ("movq %0,%%r11;"::"r"(_processor_reg.r11));      \
+                asm ("push %r11;");                                   \
+                asm ("movq %0,%%r12;"::"r"(_processor_reg.r12));      \    
+                asm ("push %r12;");                                   \
+                asm ("movq %0,%%r13;"::"r"(_processor_reg.r13));      \
+                asm ("push %r13;");                                   \
+                asm ("movq %0,%%r14;"::"r"(_processor_reg.r14));      \
+                asm ("push %r14;");                                   \
+                asm ("movq %0,%%r15"::"r"(_processor_reg.r15));       \
+                asm ("push %r15;");                                   \
+                asm ("pop %r15;");                                    \
+                asm ("pop %r14;");                                    \
+                asm ("pop %r13;");                                    \
+                asm ("pop %r12;");                                    \
+                asm ("pop %r11;");                                    \
+                asm ("pop %r10;");                                    \
+                asm ("pop %r9;");                                     \
+                asm ("pop %r8;");                                     \
+				asm ("pop %rdi;");                                    \
+				asm ("pop %rsi;");                                    \
+				asm ("pop %rdx;");                                    \
+				asm ("pop %rcx;");                                    \
+				asm ("pop %rbx;");                                    \
 				asm ("pop %rax;");
                 	                
 #define RET_FROM_INT_HANDLER 	asm("movq %rbp,%rsp;popq %rbp;iretq");

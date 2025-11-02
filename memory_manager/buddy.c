@@ -159,7 +159,7 @@ void* buddy_alloc_page(t_buddy_desc* buddy, u64 mem_size)
 	buddy->page_list_ref[BLOCK_INDEX((u64)page_addr)] = node;
 	system.buddy_desc->count[BLOCK_INDEX((u64)page_addr)] = 0;
 	new_mem_addr = page_addr + VIRT_MEM_START_ADDR - PHY_MEM_START_ADDR;
-	
+		
 	if (collect_mem == 1)
 	{
 		collect_mem_alloc(new_mem_addr);
@@ -182,7 +182,7 @@ void buddy_free_page(t_buddy_desc* buddy,void* to_free_page_addr)
 	t_llist_node* node = NULL;
 	t_llist_node* node_buddy = NULL;
 	int i;
-
+	
 	SAVE_IF_STATUS
 	CLI	
 	page_addr = to_free_page_addr;

@@ -122,8 +122,7 @@ void kmain(multiboot_info_t* mbd, u64 magic, u64 init_data_add)
 	process_context->page_pml4 = buddy_alloc_page(system.buddy_desc,0x1000);
 	 
 	init_vm_process(process_context);
-	*(system.process_info->tss.esp) = KERNEL_STACK;
-	//system.network_desc = network_init();                  		
+	*(system.process_info->tss.esp) = KERNEL_STACK;             		
 	kernel_stack = KERNEL_STACK - 100;
 	asm volatile ("mov %0,%%rbp;"::"r"(kernel_stack));
 	asm volatile ("mov %0,%%rsp;"::"r"(kernel_stack));

@@ -39,7 +39,6 @@ void init_fb(multiboot_info_t* mbd)
 
 static void put_pixel(int x, int y, u8 c)
 {
-
     unsigned int pix_offset = (4 * x) + (4 * y) * fb_width;
 
 /*    

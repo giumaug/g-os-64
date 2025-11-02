@@ -146,6 +146,10 @@ toc:
 .word end_of_gdt - gdt_data - 1 
 .long gdt_data
 
+#AP PROCESSOR GDT AREA (max 32 cpu)
+#.align 4
+#.lcomm AP_GDT, 0x700
+
 .lcomm MULTIBOOT_INFO,8
 .lcomm MULTIBOOT_MAGIC,8
 
