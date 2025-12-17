@@ -41,10 +41,10 @@
 
 #define FROM_BLOCK_TO_LBA(block_num) ext2->partition_start_sector + block_num * BLOCK_SIZE / SECTOR_SIZE
 
-#define BLOCK_SECTOR_ADDRESS(group_block_index,block)    ext2->partition_start_sector                                         \
-							+(BLOCK_SIZE                                                          \
-							+ext2->superblock->s_block_group_size*(group_block_index+1)           \
-							+ext2->superblock->s_block_group_header_size+(BLOCK_SIZE*(block+1)))  \
+#define BLOCK_SECTOR_ADDRESS(group_block_index,block)    ext2->partition_start_sector                                           \
+							+(BLOCK_SIZE                                                                                        \
+							+ext2->superblock->s_block_group_size*(group_block_index+1)                                         \
+							+ext2->superblock->s_block_group_header_size+(BLOCK_SIZE*(block+1)))                                \
 							/SECTOR_SIZE;
 
 #define ABSOLUTE_BLOCK_ADDRESS(group_block_index,relative_block_address) ext2->superblock->s_blocks_per_group * group_block_index +     relative_block_address
@@ -54,83 +54,83 @@
 #define RELATIVE_BITMAP_BYTE(block_index, blocks_per_group) ((block_index - 1) % blocks_per_group) / 8
 #define RELATIVE_BITMAP_BIT(block_index, blocks_per_group) ((block_index - 1) % blocks_per_group) % 8
 
-#define TOT_FS_GROUP(tot_fs_block, block_per_group) (tot_fs_block / block_per_group) == 0 ? \
-                                                    (tot_fs_block / block_per_group) :      \
+#define TOT_FS_GROUP(tot_fs_block, block_per_group) (tot_fs_block / block_per_group) == 0 ?                                     \
+                                                    (tot_fs_block / block_per_group) :                                          \
                                                     (tot_fs_block / block_per_group) + 1;
 
-#define FIRST_DATA_BLOCK(ext2,group_block)  (((ext2->superblock->s_inodes_per_group * 128) % BLOCK_SIZE) == 0 ?   \
-			                 ((ext2->superblock->s_inodes_per_group * 128) / BLOCK_SIZE) :           \
-				         ((ext2->superblock->s_inodes_per_group * 128) / BLOCK_SIZE) + 1) +       \
+#define FIRST_DATA_BLOCK(ext2,group_block)  (((ext2->superblock->s_inodes_per_group * 128) % BLOCK_SIZE) == 0 ?                 \
+			                 ((ext2->superblock->s_inodes_per_group * 128) / BLOCK_SIZE) :                                      \
+				         ((ext2->superblock->s_inodes_per_group * 128) / BLOCK_SIZE) + 1) +                                     \
                                          group_block->bg_inode_table
 
-#define WRITE(_sector_count,_lba,_io_buffer)    do {                                                                    \
-						t_io_request* io_request; 						\
-                                                io_request=kmalloc(sizeof(t_io_request));                               \
-					  	io_request->device_desc=ext2->device_desc;				\
-						io_request->sector_count=_sector_count;					\
-						io_request->lba=_lba;							\
-						io_request->io_buffer=_io_buffer;					\
-						io_request->process_context=system.process_info->current_process->val;	\
-						ext2->device_desc->write(io_request);                                   \
-						kfree(io_request);                                                      \
-                                                } while(0);                                       
+#define WRITE(_sector_count,_lba,_io_buffer)    do {                                                                            \
+						t_io_request* io_request; 						                                                        \
+                        io_request=kmalloc(sizeof(t_io_request));                                                               \
+					  	io_request->device_desc=ext2->device_desc;				                                                \
+						io_request->sector_count=_sector_count;					                                                \
+						io_request->lba=_lba;							                                                        \
+						io_request->io_buffer=_io_buffer;					                                                    \
+						io_request->process_context=system.process_info->current_process[get_current_process_context()]->val;	\
+						ext2->device_desc->write(io_request);                                                                   \
+						kfree(io_request);                                                                                      \
+                        } while(0);                                       
 
-#define READ(_sector_count,_lba,_io_buffer)     do{                                                                     \
-						t_io_request* io_request; 						\
-                                                io_request=kmalloc(sizeof(t_io_request));                               \
-					  	io_request->device_desc=ext2->device_desc;				\
-						io_request->sector_count=_sector_count;					\
-						io_request->lba=_lba;							\
-						io_request->io_buffer=_io_buffer;					\
-						io_request->process_context=system.process_info->current_process->val;	\
-						ext2->device_desc->read(io_request); 					\
-                                                kfree(io_request);                                                      \
+#define READ(_sector_count,_lba,_io_buffer)     do{                                                                             \
+						t_io_request* io_request; 						                                                        \
+                        io_request=kmalloc(sizeof(t_io_request));                                                               \
+					  	io_request->device_desc=ext2->device_desc;				                                                \
+						io_request->sector_count=_sector_count;					                                                \
+						io_request->lba=_lba;							                                                        \
+						io_request->io_buffer=_io_buffer;					                                                    \
+						io_request->process_context=system.process_info->current_process[get_current_process_context()]->val;	\
+						ext2->device_desc->read(io_request); 					                                                \
+                        kfree(io_request);                                                                                      \
 						} while(0);
 
-#define READ_DMA(_sector_count,_lba,_io_buffer) do{                                                                     \
-						t_io_request* io_request; 						\
-                                                io_request=kmalloc(sizeof(t_io_request));                               \
-					  	io_request->device_desc=ext2->device_desc;				\
-						io_request->sector_count=_sector_count;					\
-						io_request->lba=_lba;							\
-						io_request->io_buffer=_io_buffer;					\
-						io_request->process_context=system.process_info->current_process->val;	\
-						ext2->device_desc->read_dma(io_request); 				\
-                                                kfree(io_request);                                                      \
+#define READ_DMA(_sector_count,_lba,_io_buffer) do{                                                                             \
+						t_io_request* io_request; 						                                                        \
+                        io_request=kmalloc(sizeof(t_io_request));                                                               \
+					  	io_request->device_desc=ext2->device_desc;				                                                \
+						io_request->sector_count=_sector_count;					                                                \
+						io_request->lba=_lba;							                                                        \
+						io_request->io_buffer=_io_buffer;					                                                    \
+						io_request->process_context=system.process_info->current_process[get_current_process_context()]->val;	\
+						ext2->device_desc->read_dma(io_request); 				                                                \
+                        kfree(io_request);                                                                                      \
 						} while(0);
 
-#define P_WRITE(_sector_count,_lba,_io_buffer)  do{                                                                     \
-						t_io_request* io_request;                                               \
-                                                io_request=kmalloc(sizeof(t_io_request));                               \
-					  	io_request->device_desc=ext2->device_desc;				\
-						io_request->sector_count=_sector_count;					\
-						io_request->lba=_lba;							\
-						io_request->io_buffer=_io_buffer;					\
-						ext2->device_desc->p_write(io_request);                                 \
-						kfree(io_request);                                                      \
-                                                } while(0);
+#define P_WRITE(_sector_count,_lba,_io_buffer)  do{                                                                             \
+						t_io_request* io_request;                                                                               \
+                        io_request=kmalloc(sizeof(t_io_request));                                                               \
+					  	io_request->device_desc=ext2->device_desc;				                                                \
+						io_request->sector_count=_sector_count;					                                                \
+						io_request->lba=_lba;							                                                        \
+						io_request->io_buffer=_io_buffer;					                                                    \
+						ext2->device_desc->p_write(io_request);                                                                 \
+						kfree(io_request);                                                                                      \
+                        } while(0);
 
-#define P_READ(_sector_count,_lba,_io_buffer)   do{                                                                     \
-						t_io_request* io_request;         					\
-						io_request=kmalloc(sizeof(t_io_request));                               \
-					  	io_request->device_desc=ext2->device_desc;				\
-						io_request->sector_count=_sector_count;					\
-						io_request->lba=_lba;							\
-						io_request->io_buffer=_io_buffer;					\
-						ext2->device_desc->p_read(io_request); 					\
-						kfree(io_request);                                                      \
+#define P_READ(_sector_count,_lba,_io_buffer)   do{                                                                             \
+						t_io_request* io_request;         					                                                    \
+						io_request=kmalloc(sizeof(t_io_request));                                                               \
+					  	io_request->device_desc=ext2->device_desc;				                                                \
+						io_request->sector_count=_sector_count;					                                                \
+						io_request->lba=_lba;							                                                        \ 
+						io_request->io_buffer=_io_buffer;					                                                    \
+						ext2->device_desc->p_read(io_request); 					                                                \
+						kfree(io_request);                                                                                      \
 						} while(0);
 
-#define WRITE_DMA(_sector_count,_lba,_io_buffer) do{                                                                     \
-						t_io_request* io_request; 						\
-                                                io_request=kmalloc(sizeof(t_io_request));                               \
-					  	io_request->device_desc=ext2->device_desc;				\
-						io_request->sector_count=_sector_count;					\
-						io_request->lba=_lba;							\
-						io_request->io_buffer=_io_buffer;					\
-						io_request->process_context=system.process_info->current_process->val;	\
-						ext2->device_desc->write_dma(io_request); 				\
-                                                kfree(io_request);                                                      \
+#define WRITE_DMA(_sector_count,_lba,_io_buffer) do{                                                                            \
+						t_io_request* io_request; 						                                                        \
+                        io_request=kmalloc(sizeof(t_io_request));                                                               \
+					  	io_request->device_desc=ext2->device_desc;				                                                \
+						io_request->sector_count=_sector_count;					                                                \
+						io_request->lba=_lba;							                                                        \
+						io_request->io_buffer=_io_buffer;					                                                    \
+						io_request->process_context=system.process_info->current_process[get_current_process_context()]->val;	\
+						ext2->device_desc->write_dma(io_request); 				                                                \
+                        kfree(io_request);                                                                                      \
 						} while(0);
 
 #define ENTRY_PAD(entry_len)  ((entry_len % 4) != 0 ?  4 - (entry_len % 4) : 0)

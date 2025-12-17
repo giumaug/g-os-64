@@ -13,12 +13,9 @@ void do_context_switch(struct t_process_context *current_process_context,
 		       struct t_process_context* new_process_context)
 {
 	
-	if (new_process_context->pid == 3)
-	{
-		new_process_context->pid = 3;
-	}
 	
-	*(system.process_info->tss.esp)=KERNEL_STACK;
+	//Non dovrebbe servire
+	//*(system.process_info->tss.esp)=KERNEL_STACK;
 	//save current process state 
 	current_process_context->processor_reg.rax=processor_reg->rax;
 	current_process_context->processor_reg.rbx=processor_reg->rbx;
@@ -80,7 +77,7 @@ void schedule(struct t_process_context *current_process_context,struct t_process
 	t_llist_node* node_orig;
 
 	index=0;
-	node=system.process_info->current_process;
+	node=system.process_info->current_process[get_current_process_context()];
 	node_orig = node;	
 	current_process_context=node->val;
 
@@ -94,7 +91,8 @@ void schedule(struct t_process_context *current_process_context,struct t_process
 			if (current_process_context->pid!=next_process_context->pid && next_process_context->pid!=0)
 			{
 				do_context_switch(current_process_context,processor_reg,next_process_context);	
-				system.process_info->current_process=next;
+				//system.process_info->current_process=next;
+				system.process_info->current_process[get_current_process_context()]=next;
 				if (current_process_context->proc_status==RUNNING)
 				{
 					adjust_sched_queue(current_process_context);
@@ -108,7 +106,7 @@ void schedule(struct t_process_context *current_process_context,struct t_process
 				}
 				else if (current_process_context->proc_status==EXITING)
 				{
-					new_process_context=system.process_info->current_process->val;	
+					new_process_context=system.process_info->current_process[get_current_process_context()]->val;	
 					kfree(current_process_context);
 					ll_delete_node(node);
 				}
@@ -131,7 +129,7 @@ void schedule(struct t_process_context *current_process_context,struct t_process
 		{
 			process_0 = system.process_info->process_0->val;
 			do_context_switch(current_process_context,processor_reg,process_0);	
-			system.process_info->current_process = system.process_info->process_0;
+			system.process_info->current_process[get_current_process_context()] = system.process_info->process_0;
 			if (current_process_context->proc_status==SLEEPING)
 			{
 				ll_delete_node(node);
@@ -221,7 +219,7 @@ void _sleep_and_unlock(t_spinlock_desc* lock)
 	struct t_process_context* current_process;
 	SAVE_IF_STATUS
 	CLI     
-	current_process=system.process_info->current_process->val;
+	current_process=system.process_info->current_process[get_current_process_context()]->val;
 	current_process->sleep_time=system.time;
 	t_llist_node* current_node=system.process_info->current_process;
 	int xxx = current_process->proc_status;
@@ -265,7 +263,7 @@ void _pause()
 
 	SAVE_IF_STATUS
 	CLI
-	current_process = system.process_info->current_process->val;
+	current_process = system.process_info->current_process[get_current_process_context()]->val;
 	if (current_process->sig_num != SIGCHLD)
 	{
 		pause_queue = system.process_info->pause_queue;
@@ -555,7 +553,7 @@ void _sleep_time(unsigned int time)
 	SAVE_IF_STATUS	
 	CLI 
 	sleep_wait_queue=system.process_info->sleep_wait_queue;
-	current_process=system.process_info->current_process->val;
+	current_process=system.process_info->current_process[get_current_process_context()]->val;
 	current_process->assigned_sleep_time=time;
 	current_process->sleep_wait_queue_ref = ll_prepend(sleep_wait_queue,current_process);
 	t1 = system.time;	

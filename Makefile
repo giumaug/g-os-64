@@ -70,8 +70,8 @@ asm.o:	asm.s asm.h
 	$(CC) $(CFLAGS) asm.s
 
 loader.o: loader.s
-	$(CC) $(CFLAGS) loader.s
-
+	$(CC) $(CFLAGS) loader.S
+		
 debug.o:
 	$(CC) $(CPPFLAGS) $(CFLAGS) debug.c
 

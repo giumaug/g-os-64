@@ -310,7 +310,7 @@ exit:
 		system.flush_network = 1;                                                                       
 	}                                                                                                               
 	_action2=0;                                                                                      
-	_current_process_context=*(struct t_process_context*)system.process_info->current_process->val;                 
+	_current_process_context=*(struct t_process_context*)system.process_info->current_process[get_current_process_context()]->val;                 
 	_old_process_context=_current_process_context;                                                                  
 	_processor_reg=processor_reg;                                                                                   
 	if (system.force_scheduling == 1 && 0 == 0 && system.int_path_count == 0)                                  
@@ -328,7 +328,7 @@ exit:
 		while(!stop)                                                                                             
 		{                                                                                                       
 			schedule(&_current_process_context,&_processor_reg);                                            
-			_new_process_context = *(struct t_process_context*) system.process_info->current_process->val;  
+			_new_process_context = *(struct t_process_context*) system.process_info->current_process[get_current_process_context()]->val;  
 			if (_new_process_context.sig_num == SIGINT)                                                    
 			{                                                                                              
 				_exit(0);

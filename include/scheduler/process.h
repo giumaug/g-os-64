@@ -96,19 +96,22 @@ struct t_process_context
 	t_llist_node* pgid_list_ref;
 };
 
-struct t_process_info 
+//current_process, tss, current_processor array/lapic association are determined by protocol. 8-bit lapic is is split in package,
+//core and thread. For 4 core 1 thread machine we have:
+//core0 -> 0, core1 -> 1, core2 -> 2, core3 -> 3. Dynamic protocol is not implemented. We use static mapping.
+
+struct t_process_info
 {
-	t_llist* process_context_list;
-	t_llist_node* current_process;
+	//t_llist_node* current_process;
+	t_llist_node* current_process[NUM_CPU];
 	t_llist_node* process_0;
 	unsigned int next_pid;
-	struct t_tss tss;	
+	//struct t_tss tss;
+	struct t_tss tss[NUM_CPU];
 	t_llist* pause_queue;
 	t_llist* sleep_wait_queue;
-	struct t_processor_reg current_processor_reg;
-	u32 heap_start_addr;
-	u32 heap_size;
-	t_llist* mem_regs;
+	//struct t_processor_reg current_processor_reg;
+	//struct t_processor_reg current_processor_reg[NUM_CPU];
 	t_hashtable* pid_hash;
 	t_hashtable* pgid_hash;
 };

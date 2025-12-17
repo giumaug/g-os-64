@@ -619,7 +619,6 @@ u32 alloc_block(t_ext2* ext2, t_inode* i_node, u32 block_num)
 		//write_superblock(ext2);
 		i_node->last_file_block_num = block_num;
     }
-	system.alloc_counter++;
 	return block;
 }
 

@@ -40,8 +40,9 @@ void set_idt_entry(int entry,struct t_i_desc* i_desc);
 		system.flush_network = 1;                                                                       	        \
 	}                                                                                                               \
 	_action2=action;                                                                                                \
-	_current_process_context = *(struct t_process_context*)system.process_info->current_process->val;                 \
-	_old_process_context = _current_process_context;                                                                  \
+	_current_process_context = *(struct t_process_context*)                                                         \
+		system.process_info->current_process[get_current_process_context()]->val;                                   \
+	_old_process_context = _current_process_context;                                                                \
 	_processor_reg=processor_reg;                                                                                   \
 	                                                                                                                \
 	if (system.force_scheduling == 1 && action == 0 && system.int_path_count == 0)                                  \
@@ -60,7 +61,8 @@ void set_idt_entry(int entry,struct t_i_desc* i_desc);
 		while(!stop)                                                                                            	\
 		{                                                                                                       	\
 			schedule(&_current_process_context, &_processor_reg);                                            	    \
-			_new_process_context = *(struct t_process_context*) system.process_info->current_process->val;  	    \
+			_new_process_context = *(struct t_process_context*)                                                     \
+				system.process_info->current_process[get_current_process_context()]->val;  	                        \
 			if (_new_process_context.sig_num == SIGINT)                                                     	    \
 			{                                                                                               	    \
 				free_vm_process(&_new_process_context);                                                      	    \

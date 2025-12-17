@@ -5,9 +5,11 @@
 #include "drivers/lapic/lapic.h"
 #include "drivers/pit/8253.h" 
 
-static u32 interrupt_counter = 0;
-
-extern int counter;
+extern u64 *AP_GDT;
+extern u64 *AP_TSS;
+extern u64 *AP_GDT_DESC;
+extern u32 ap_trampoline_start;
+extern u32 ap_trampoline_end;
 
 static void init_timer();
 static void int_handler_lapic();
@@ -153,7 +155,7 @@ void int_handler_lapic()
 	SAVE_PROCESSOR_REG
 	EOI_TO_LAPIC
 	//SWITCH_DS_TO_KERNEL_MODE
-	process_context = system.process_info->current_process->val;
+	//process_context = system.process_info->current_process->val;
 	
 	system.time += QUANTUM_DURATION;
 	if (system.int_path_count > 0)
@@ -204,7 +206,7 @@ void int_handler_lapic()
 	}
 	else
 	{	
-		process_context = system.process_info->current_process->val;
+		process_context = system.process_info->current_process[get_current_process_context()]->val;
 		process_context->sleep_time -= QUANTUM_DURATION;
 		if (process_context->sleep_time > 1000) 	
 		{
@@ -221,7 +223,10 @@ void int_handler_lapic()
 		}
 		else 
 		{
-			process_context->tick--;
+			if (process_context->pid != 0)
+			{
+				process_context->tick--;
+			}
 			if (process_context->tick == 0) 
 			{
 				process_context->tick = TICK;
@@ -265,7 +270,7 @@ EXIT_HANDLER:;
 		system.flush_network = 1;                                                                       
 	}                                                                                                               
 	_action2=is_schedule;                                                                                      
-	_current_process_context=*(struct t_process_context*)system.process_info->current_process->val;                 
+	_current_process_context=*(struct t_process_context*)system.process_info->current_process[get_current_process_context()]->val;                 
 	_old_process_context=_current_process_context;                                                                  
 	_processor_reg=processor_reg;                                                                                   
 	if (system.force_scheduling == 1 && 0 == 0 && system.int_path_count == 0)                                  
@@ -282,7 +287,7 @@ EXIT_HANDLER:;
 		while(!stop)                                                                                             
 		{                                                                                                       
 			schedule(&_current_process_context,&_processor_reg);                                            
-			_new_process_context = *(struct t_process_context*) system.process_info->current_process->val;
+			_new_process_context = *(struct t_process_context*) system.process_info->current_process[get_current_process_context()]->val;
 			if (_new_process_context.pid == 1)
 			{
 				stop = 0;
@@ -320,6 +325,300 @@ EXIT_HANDLER:;
 		RESTORE_PROCESSOR_REG                                                                           
         RET_FROM_INT_HANDLER
 	}
-	
-	
 }
+
+void ap_init()
+{
+	int i;
+	u8* gdt_mem = &AP_GDT;
+	u8* gdt_tss = &AP_TSS;
+	u64 cpu_gdt[NUM_CPU - 1];
+	u8* cpu_gtd_desc = &AP_GDT_DESC;
+	
+	for (i = 0; i < NUM_CPU - 1; i++)
+	{
+		cpu_gdt[i]  = &gdt_mem[(56 * i) + 0];
+		//null descriptor
+		gdt_mem[(56 * i) + 0] = 0x00;										
+	    gdt_mem[(56 * i) + 1] = 0x00;
+		gdt_mem[(56 * i) + 2] = 0x00;
+		gdt_mem[(56 * i) + 3] = 0x00;
+		gdt_mem[(56 * i) + 4] = 0x00;
+		gdt_mem[(56 * i) + 5] = 0x00;
+		gdt_mem[(56 * i) + 6] = 0x00;
+		gdt_mem[(56 * i) + 7] = 0x00;
+
+        // gdt kernel code segment
+		gdt_mem[(56 * i) + 8] = 0x00;										
+		gdt_mem[(56 * i) + 9] = 0x00;
+		gdt_mem[(56 * i) + 10] = 0x00;
+		gdt_mem[(56 * i) + 11] = 0x00;
+		gdt_mem[(56 * i) + 12] = 0x00;
+		gdt_mem[(56 * i) + 13] = 0x9A;
+		gdt_mem[(56 * i) + 14] = 0x20;
+		gdt_mem[(56 * i) + 15] = 0x00;
+
+		//gdt kernel data segment
+		gdt_mem[(56 * i) + 16] = 0x00;										
+		gdt_mem[(56 * i) + 17] = 0x00;
+		gdt_mem[(56 * i) + 18] = 0x00;
+		gdt_mem[(56 * i) + 19] = 0x00;
+		gdt_mem[(56 * i) + 20] = 0x00;
+		gdt_mem[(56 * i) + 21] = 0x92;
+		gdt_mem[(56 * i) + 22] = 0x00;
+		gdt_mem[(56 * i) + 23] = 0x00;
+
+		//# gdt user code segment
+		gdt_mem[(56 * i) + 24] = 0x00;										
+		gdt_mem[(56 * i) + 25] = 0x00;
+		gdt_mem[(56 * i) + 26] = 0x00;
+		gdt_mem[(56 * i) + 27] = 0x00;
+		gdt_mem[(56 * i) + 28] = 0x00;
+		gdt_mem[(56 * i) + 29] = 0xFA;
+		gdt_mem[(56 * i) + 30] = 0x20;
+		gdt_mem[(56 * i) + 31] = 0x00;
+
+		//gdt user data segment
+		gdt_mem[(56 * i) + 32] = 0x00;										
+		gdt_mem[(56 * i) + 33] = 0x00;
+		gdt_mem[(56 * i) + 34] = 0x00;
+		gdt_mem[(56 * i) + 35] = 0x00;
+		gdt_mem[(56 * i) + 36] = 0x00;
+		gdt_mem[(56 * i) + 37] = 0xF2;
+		gdt_mem[(56 * i) + 38] = 0x00;
+		gdt_mem[(56 * i) + 39] = 0x00;
+
+		//gdt tss segment
+		gdt_mem[(56 * i) + 40] = 0x64;							
+		gdt_mem[(56 * i) + 41] = 0x00;
+		gdt_mem[(56 * i) + 42] = ((u64)(gdt_tss + i)) & 0xFFULL;
+		gdt_mem[(56 * i) + 43] = ((u64)(gdt_tss + i)) & 0xFF00ULL;
+		gdt_mem[(56 * i) + 44] = ((u64)(gdt_tss + i)) & 0xFF0000ULL;
+		gdt_mem[(56 * i) + 45] = 0x89;
+		gdt_mem[(56 * i) + 46] = 0x00;
+		gdt_mem[(56 * i) + 47] = ((u64) (gdt_tss + i)) & 0xFF000000ULL;
+		gdt_mem[(56 * i) + 48] = ((u64)(gdt_tss + i)) & 0xFF00000000ULL;
+		gdt_mem[(56 * i) + 49] = ((u64)(gdt_tss + i)) & 0xFF0000000000ULL;
+		gdt_mem[(56 * i) + 50] = ((u64)(gdt_tss + i)) & 0xFF000000000000ULL;
+		gdt_mem[(56 * i) + 51] = ((u64)(gdt_tss + i)) & 0xFF00000000000000ULL;
+		gdt_mem[(56 * i) + 52] = 0x00;
+		gdt_mem[(56 * i) + 53] = 0x00;
+		gdt_mem[(56 * i) + 54] = 0x00;
+		gdt_mem[(56 * i) + 55] = 0x00;
+	}
+	
+	//.word end_of_gdt - gdt_data - 1 
+    //.long gdt_data
+
+	unsigned int start = &ap_trampoline_start;
+	unsigned int end = &ap_trampoline_end;
+	unsigned int size = end - start;
+	kmemcpy(AP_TRAMPOLINE_ADDR, &ap_trampoline_start, ((unsigned int)(&ap_trampoline_end) - (unsigned int)(&ap_trampoline_start)));
+	
+//	0xC4500 = 11000100010100000000 
+//    vector = 0                                          
+//    delivery mode = init
+//    destination mode = physical
+//    delivery status = idle
+//    level = assert      
+//    trigger mode = edge
+//    destination shorthand 11
+//
+//    0x44608 = 11000100011000001000
+//    vector = 8
+//    delivery mode = start-up
+//    destination mode = physical
+//    delivery status = idle
+//    level = assert
+//    trigger mode = edge
+//    destination shorthand 11
+	
+	
+	*((volatile u32*)(LAPIC_BASE + 0x280)) = 0;
+	*((volatile u32*)(LAPIC_BASE + 0x310)) = (*((volatile u32*)(LAPIC_BASE + 0x310))) & 0xFFFFFF;
+	//*((volatile u32*)(LAPIC_BASE + 0x300)) = (*((volatile u32*)(LAPIC_BASE + 0x300)) & 0xC0500); //0xC4500
+	*((volatile u32*)(LAPIC_BASE + 0x300)) = 0xC0500;
+	do { __asm__ __volatile__ ("pause" : : : "memory"); }while(*((volatile u32*)(LAPIC_BASE + 0x300)) & (1 << 12));
+	
+	*((volatile u32*)(LAPIC_BASE + 0x280)) = 0;
+	*((volatile u32*)(LAPIC_BASE + 0x310)) = (*((volatile u32*)(LAPIC_BASE + 0x310))) & 0xFFFFFF;
+	//*((volatile u32*)(LAPIC_BASE + 0x300)) = (*((volatile u32*)(LAPIC_BASE + 0x300)) & 0xC0608); //0x44608
+	*((volatile u32*)(LAPIC_BASE + 0x300)) = 0xC0608;
+	do { __asm__ __volatile__ ("pause" : : : "memory"); }while(*((volatile u32*)(LAPIC_BASE + 0x300)) & (1 << 12));
+}
+
+u8 get_current_process_context()
+{
+	u8 id;
+	u8 mapId = 0;
+	
+	id = read_reg(LAPIC_ID);
+	switch (id) 
+	{
+		case CPU_0:
+		{
+			mapId = 0;
+			break;
+		}
+		case CPU_1:
+		{
+			mapId = 1;
+			break;
+		}
+		case CPU_2:
+		{
+			mapId = 2;
+			break;
+		}
+		case CPU_3:
+		{
+			mapId = 3;
+			break;
+		}
+		case CPU_4:
+		{
+			mapId = 4;
+			break;
+		}
+		case CPU_5:
+		{
+			mapId = 5;
+			break;
+		}
+		case CPU_6:
+		{
+			mapId = 6;
+			break;
+		}
+		case CPU_7:
+		{
+			mapId = 7;
+			break;
+		}
+		case CPU_8:
+		{
+			mapId = 8;
+			break;
+		}
+		case CPU_9:
+		{
+			mapId = 9;
+			break;
+		}
+		case CPU_10:
+		{
+			mapId = 10;
+			break;
+		}
+		case CPU_11:
+		{
+			mapId = 11;
+			break;
+		}
+		case CPU_12:
+		{
+			mapId = 12;
+			break;
+		}
+		case CPU_13:
+		{
+			mapId = 13;
+			break;
+		}
+		case CPU_14:
+		{
+			mapId = 14;
+			break;
+		}
+		case CPU_15:
+		{
+			mapId = 15;
+			break;
+		}
+		case CPU_16:
+		{
+			mapId = 16;
+			break;
+		}
+		case CPU_17:
+		{
+			mapId = 17;
+			break;
+		}
+		case CPU_18:
+		{
+			mapId = 18;
+			break;
+		}
+		case CPU_19:
+		{
+			mapId = 19;
+			break;
+		}
+		case CPU_20:
+		{
+			mapId = 20;
+			break;
+		}
+		case CPU_21:
+		{
+			mapId = 21;
+			break;
+		}
+		case CPU_22:
+		{
+			mapId = 22;
+			break;
+		}
+		case CPU_23:
+		{
+			mapId = 23;
+			break;
+		}
+		case CPU_24:
+		{
+			mapId = 24;
+			break;
+		}
+		case CPU_25:
+		{
+			mapId = 25;
+			break;
+		}
+		case CPU_26:
+		{
+			mapId = 26;
+			break;
+		}
+		case CPU_27:
+		{
+			mapId = 27;
+			break;
+		}
+		case CPU_28:
+		{
+			mapId = 28;
+			break;
+		}
+		case CPU_29:
+		{
+			mapId = 29;
+			break;
+		}
+		case CPU_30:
+		{
+			mapId = 30;
+			break;
+		}
+		case CPU_31:
+		{
+			mapId = 31;
+			break;
+		}
+	}
+	return mapId;
+}
+
+
+
+

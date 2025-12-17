@@ -35,7 +35,11 @@
 #define TICK_FRQ 100
 #define EOI_TO_LAPIC unsigned char* p = (LAPIC_BASE + EOI); \
     *p = 0;
+    
+#define AP_TRAMPOLINE_ADDR 0x8000
 
 void init_lapic();
+void ap_init();
+u8 get_current_process_context();
 
 #endif

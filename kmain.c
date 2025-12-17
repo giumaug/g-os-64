@@ -14,22 +14,23 @@
 #include "framebuffer/framebuffer.h"
 #include "drivers/ioapic/ioapic.h"
 
+extern u64 TSS_ADD;
+
 void process_0();
-
 unsigned int seed=105491;
-//extern unsigned int PAGE_DIR;
 unsigned char tmp_kernel_stack[4096];
-
 t_system system;
 	
-void kmain(multiboot_info_t* mbd, u64 magic, u64 init_data_add)
+void kmain(multiboot_info_t* mbd, u64 magic)
 {
+	int i;
 	static multiboot_info_t _mbd;
 	_mbd = *mbd;
 	static struct t_process_info process_info;
 	static t_scheduler_desc scheduler_desc;
 	static unsigned int* init_data;
-    init_data = init_data_add;
+    //init_data = init_data_add;
+    init_data = &TSS_ADD;
 	static struct t_process_context* process_context = NULL;
 	static struct t_i_desc i_desc;
 	static t_console_desc console_desc;
@@ -40,21 +41,12 @@ void kmain(multiboot_info_t* mbd, u64 magic, u64 init_data_add)
 	static t_device_desc* device_desc = NULL;
 	system.time = 0;
 	system.flush_network = 0;
-    system.read_block_count = 0;
-	system.read_bitmap_count = 0;
-	system.read_write_count = 0;
-	system.run_time = 0;
-	system.run_time_1 = 0;
-	
-	init_data = init_data_add;
  	CLI
 	system.force_scheduling = 0;
 	system.process_info = &process_info;
 	system.scheduler_desc = &scheduler_desc;
 	system.int_path_count = 0;
 	system.scheduler_desc->scheduler_queue[0] = 0;
-	system.process_info->current_process = NULL;
-	
 	init_idt();
 	system.master_page_pml4 = (void*)init_virtual_memory();
 	SWITCH_PAGE_DIR(FROM_VIRT_TO_PHY(((u64)system.master_page_pml4)))
@@ -92,6 +84,8 @@ void kmain(multiboot_info_t* mbd, u64 magic, u64 init_data_add)
 	system.process_info->pid_hash = hashtable_init(PID_HASH_SIZE);
 	system.process_info->pgid_hash = hashtable_init(PGID_HASH_SIZE);
 	
+	ap_init();
+	
 	process_context = kmalloc(sizeof(struct t_process_context));
 	process_context->root_dir_inode_number = ROOT_INODE;
 	process_context->current_dir_inode_number = ROOT_INODE;
@@ -109,9 +103,13 @@ void kmain(multiboot_info_t* mbd, u64 magic, u64 init_data_add)
     process_context->tick = TICK;
 	process_context->processor_reg.rsp = NULL;
 	process_context->console_desc = &console_desc;
-	system.process_info->current_process = ll_prepend(system.scheduler_desc->scheduler_queue[9],process_context);
-	system.process_info->tss.ss = NULL;
-	system.process_info->tss.esp = *init_data;
+	//CI VA MESSO IL BSP, serve pure moltiplicare lo scheduler per il numero di CPU
+	system.process_info->current_process[0] = ll_prepend(system.scheduler_desc->scheduler_queue[9],process_context);
+	system.process_info->tss[0].ss = NULL;
+	for (i = 0; i < NUM_CPU; i++)
+	{
+		system.process_info->tss[0].esp = *init_data;
+	}
 	system.process_info->pause_queue = new_dllist();
 	process_context->phy_kernel_stack = FROM_VIRT_TO_PHY(buddy_alloc_page(system.buddy_desc,KERNEL_STACK_SIZE));
 	process_context->process_type = KERNEL_THREAD;
@@ -122,12 +120,16 @@ void kmain(multiboot_info_t* mbd, u64 magic, u64 init_data_add)
 	process_context->page_pml4 = buddy_alloc_page(system.buddy_desc,0x1000);
 	 
 	init_vm_process(process_context);
-	*(system.process_info->tss.esp) = KERNEL_STACK;             		
+	for (i = 0; i < NUM_CPU; i++)
+	{
+		*(system.process_info->tss[i].esp) = KERNEL_STACK;
+	}             		
 	kernel_stack = KERNEL_STACK - 100;
 	asm volatile ("mov %0,%%rbp;"::"r"(kernel_stack));
 	asm volatile ("mov %0,%%rsp;"::"r"(kernel_stack));
 		
 	STI
+	while(1);
 	process_0();	       	
 }
 

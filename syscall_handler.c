@@ -5,6 +5,8 @@
 #include "syscall_handler.h"
 #include "debug.h"
 #include "ext2/ext2.h"
+#include "system.h"
+
 
 #define K_STACK 0x1FFFFB
 
@@ -36,7 +38,9 @@ void syscall_handler()
 	SWITCH_SS_TO_KERNEL_MODE
 	syscall_num=processor_reg.rax;
 	on_exit_action=0;
-	current_process_context=system.process_info->current_process->val;
+	//current_process_context=system.process_info->current_process->val;
+	current_process_context=system.process_info->current_process[get_current_process_context()]->val;
+	
 	t_console_desc *console_desc=current_process_context->console_desc;
 	syscall_num=processor_reg.rax;
 	params=processor_reg.rcx;
@@ -282,7 +286,8 @@ void syscall_handler()
 		system.flush_network = 1;                                                                       
 	}                                                                                                               
 	_action2=on_exit_action;                                                                                      
-	_current_process_context=*(struct t_process_context*)system.process_info->current_process->val;                 
+	//_current_process_context=*(struct t_process_context*)system.process_info->current_process->val;
+	_current_process_context=*(struct t_process_context*)system.process_info->current_process[get_current_process_context()]->val;            
 	_old_process_context=_current_process_context;                                                                  
 	_processor_reg=processor_reg;                                                                                   
 	if (system.force_scheduling == 1 && 0 == 0 && system.int_path_count == 0)                                  
@@ -299,7 +304,8 @@ void syscall_handler()
 		while(!stop)                                                                                             
 		{                                                                                                       
 			schedule(&_current_process_context,&_processor_reg);                                            
-			_new_process_context = *(struct t_process_context*) system.process_info->current_process->val;  
+			//_new_process_context = *(struct t_process_context*) system.process_info->current_process->val;
+			_new_process_context = *(struct t_process_context*) system.process_info->current_process[get_current_process_context()]->val;
 			if (_new_process_context.sig_num == SIGINT)                                                    
 			{                                                                                            
 				_exit(0);

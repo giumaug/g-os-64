@@ -14,7 +14,6 @@ static char* read_inode_bitmap(t_ext2* ext2, u32 bg_inode_bitmap, u32 group_bloc
 	}
 	else
 	{
-		system.read_bitmap_count++;
 		io_buffer = ext2->superblock->group_inode_bitmap_list[group_block_index];
 	}
 	return io_buffer;
@@ -54,7 +53,6 @@ static char* read_block_bitmap(t_ext2* ext2, u32 bg_block_bitmap, u32 group_bloc
 	}
 	else
 	{
-		system.read_bitmap_count++;
 		io_buffer = ext2->superblock->group_block_bitmap_list[group_block_index];
 	}
 	return io_buffer;
@@ -398,7 +396,6 @@ t_group_block* read_group_block(t_ext2 *ext2,u32 group_block_number)
 	}
 	else
 	{
-		system.read_block_count++;
 		group_block = (t_group_block *) ext2->superblock->group_block_list[group_block_number];
 	}
 	return group_block;

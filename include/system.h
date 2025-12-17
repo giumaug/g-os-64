@@ -3,6 +3,7 @@
 #ifndef SYSTEM_H                
 #define SYSTEM_H
 
+#include "general.h"
 #include "data_types/dllist.h"
 #include "data_types/primitive_types.h"
 #include "data_types/hashtable.h"
@@ -16,17 +17,7 @@
 #include "lib/lib.h"
 #include "device.h"
 #include "timer.h"
-
-#define TEST_STACK 0x101636
-#define TEST_USER_SPACE 0xe8f87d81
-#define AFTER_FORK 0x100179
-
-//#define DEBUG
-#ifdef DEBUG 
-	#define PRINTK(...) printk(__VA_ARGS__); 
-#else
-	#define PRINTK(...)
-#endif
+#include "drivers/lapic/lapic.h"
 
 #define DEVICE_IDLE 0
 #define DEVICE_BUSY 1
@@ -65,14 +56,6 @@ typedef struct s_system
 	t_hashtable* mount_map;
 	//trick to use second device
 	u8 device_id;
-	u32 counter;
-	u32 alloc_counter;
-	u32 open_call_counter;
-	u32 read_block_count;
-    u32 read_bitmap_count;
-	u32 read_write_count;
-	u32 run_time;
-	u32 run_time_1;
  }
 t_system;
 

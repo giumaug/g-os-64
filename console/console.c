@@ -39,7 +39,7 @@ char _read_char(t_console_desc *console_desc)
 
 	while (!(data = read_buf())) 
 	{
-		system.active_console_desc->sleeping_process=system.process_info->current_process->val;
+		system.active_console_desc->sleeping_process=system.process_info->current_process[get_current_process_context()]->val;
 		_sleep();
 	}	
 	return data;	

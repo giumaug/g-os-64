@@ -25,7 +25,7 @@ void sem_down(t_sem_desc* sem_desc)
 	struct t_process_context* current_process_context;
 	unsigned int need_sleep=0;
 
-	current_process_context=system.process_info->current_process->val;
+	//current_process_context=system.process_info->current_process->val;
 	
 //	SPINLOCK_LOCK(sem_desc->spinlock);
 	SAVE_IF_STATUS	
@@ -33,7 +33,7 @@ void sem_down(t_sem_desc* sem_desc)
 	
 	if (sem_desc->count==0)
 	{
-		current_process_context=system.process_info->current_process->val;
+		current_process_context=system.process_info->current_process[get_current_process_context()]->val;
 		ll_append( sem_desc->wait_queue,current_process_context);
 		need_sleep=1;
 	}
