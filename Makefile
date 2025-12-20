@@ -26,7 +26,7 @@ all:	loader.o                      \
 		network.o	                  \
 		pci.o
 
-	ld -T linker.ld -melf_x86_64 -no-pie -o kernel.bin \
+	ld -T linker.ld -melf_x86_64 -no-pie -Map=output.map -o kernel.bin \
 	*.o                           \
 	scheduler/*.o                 \
 	memory_manager/*.o            \

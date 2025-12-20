@@ -11,7 +11,7 @@ SECTIONS{
 
     .text_1 :{
 		loader.o(.text)
-		*(EXCLUDE_FILE (loader.o) .code_trampolinerr)
+		/* *(EXCLUDE_FILE (loader.o) .code_trampoline) */
     }>loader_address_space
 
     .rodata_1 :{
@@ -20,7 +20,7 @@ SECTIONS{
 
     .data_1 :{
         loader.o(.data)
-        *(EXCLUDE_FILE (loader.o) .code_trampoline)
+        /* *(EXCLUDE_FILE (loader.o) .code_trampoline) */
     }>loader_address_space
 
     .bss_1 :{
@@ -29,39 +29,40 @@ SECTIONS{
 
     /* kernel address space */
     
-    .pippo_1 :AT(kernel_load_address){
-	text_a = .;
+#    .pippo_1 :AT(kernel_load_address){
+#	text_a = .;
+#	loader.o(.multiboot)
+#	 *(EXCLUDE_FILE (loader.o) .text)
+#    }>kernel_address_space
+
+    .text :AT(kernel_load_address){
+	text = .;
 	loader.o(.multiboot)
+	*(EXCLUDE_FILE (loader.o) .text) 
     }>kernel_address_space
 
-    .pippo :AT(kernel_load_address - text_a){
-	/*text_a = .;*/
-	 /*loader.o(.multiboot)*/
-	 *(EXCLUDE_FILE (loader.o) .text)
-    }>kernel_address_space
-
-    .rodata :AT(kernel_load_address + (rodata - text_a)){
+    .rodata :AT(kernel_load_address + (rodata - text)){
 	rodata = .;
 	*(EXCLUDE_FILE (loader.o).rodata)
     }>kernel_address_space 
 
-    .data :AT(kernel_load_address +(data - text_a)){
+    .data :AT(kernel_load_address +(data - text)){
 	data = .;
 	*(EXCLUDE_FILE (loader.o) .data)
     }>kernel_address_space 
 
-    .bss :AT(kernel_load_address + (bss - text_a)){
+    .bss :AT(kernel_load_address + (bss - text)){
 	bss = .;
 	*(EXCLUDE_FILE (loader.o) .bss)
     }>kernel_address_space
    
-/* 
     .text_2 :{
-     test.o(.code_trampoline)
+     loader.o(.code_trampoline)
     }>ap_trampoline_address_space
 
     .data_2 :{
-        test.o(.data_trampoline)
+    loader.o(.data_trampoline_16)
     }>ap_trampoline_address_space
-*/
+    
+    
 }
