@@ -3,6 +3,7 @@ include make.rules
 vpath %.h $(INCLUDE)
 
 all:	loader.o                      \
+        trampoline.o                  \
         kmain.o                       \
         timer.o                       \
         device.o                      \
@@ -13,7 +14,7 @@ all:	loader.o                      \
         scheduler.o                   \
         memory_manager.o              \
         virtual_memory.o              \
-        framebuffer.o                  \
+        framebuffer.o                 \
         console.o                     \
 		lib.o                         \
         drivers.o                     \
@@ -26,12 +27,12 @@ all:	loader.o                      \
 		network.o	                  \
 		pci.o
 
-	ld -T linker.ld -melf_x86_64 -no-pie -Map=output.map -o kernel.bin \
+	ld -T linker.ld -melf_x86_64 -no-pie -o kernel.bin \
 	*.o                           \
 	scheduler/*.o                 \
 	memory_manager/*.o            \
 	virtual_memory/*.o            \
-	framebuffer/*.o                \
+	framebuffer/*.o               \
 	console/*.o                   \
 	lib/*.o                       \
     drivers/pit/*.o               \
@@ -69,14 +70,17 @@ syscall_handler.o: syscall_handler.c
 asm.o:	asm.s asm.h
 	$(CC) $(CFLAGS) asm.s
 
-loader.o: loader.s
+loader.o: loader.S
 	$(CC) $(CFLAGS) loader.S
-		
+			
 debug.o:
 	$(CC) $(CPPFLAGS) $(CFLAGS) debug.c
 
 scheduler.o:
 	$(MAKE) -C scheduler
+	
+trampoline.o: trampoline.S
+	$(CC) $(CPPFLAGS) $(CFLAGS) trampoline.S	
 
 memory_manager.o:
 	$(MAKE) -C memory_manager

@@ -15,6 +15,7 @@
 #include "drivers/ioapic/ioapic.h"
 
 extern u64 TSS_ADD;
+extern u64 *AP_TSS;
 
 void process_0();
 unsigned int seed=105491;
@@ -47,6 +48,7 @@ void kmain(multiboot_info_t* mbd, u64 magic)
 	system.scheduler_desc = &scheduler_desc;
 	system.int_path_count = 0;
 	system.scheduler_desc->scheduler_queue[0] = 0;
+	relocate_init_code();
 	init_idt();
 	system.master_page_pml4 = (void*)init_virtual_memory();
 	SWITCH_PAGE_DIR(FROM_VIRT_TO_PHY(((u64)system.master_page_pml4)))
@@ -106,9 +108,13 @@ void kmain(multiboot_info_t* mbd, u64 magic)
 	//CI VA MESSO IL BSP, serve pure moltiplicare lo scheduler per il numero di CPU
 	system.process_info->current_process[0] = ll_prepend(system.scheduler_desc->scheduler_queue[9],process_context);
 	system.process_info->tss[0].ss = NULL;
-	for (i = 0; i < NUM_CPU; i++)
+	system.process_info->tss[0].esp = *init_data;
+	
+	u8* gdt_tss = &AP_TSS;
+	for (i = 1; i < NUM_CPU - 1; i++)
 	{
-		system.process_info->tss[0].esp = *init_data;
+		system.process_info->tss[0].ss = NULL;
+		system.process_info->tss[i].esp = gdt_tss + ((i -1) * 100) + 4; 
 	}
 	system.process_info->pause_queue = new_dllist();
 	process_context->phy_kernel_stack = FROM_VIRT_TO_PHY(buddy_alloc_page(system.buddy_desc,KERNEL_STACK_SIZE));
@@ -129,7 +135,6 @@ void kmain(multiboot_info_t* mbd, u64 magic)
 	asm volatile ("mov %0,%%rsp;"::"r"(kernel_stack));
 		
 	STI
-	while(1);
 	process_0();	       	
 }
 

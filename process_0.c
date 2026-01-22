@@ -27,7 +27,7 @@ void process_0()
     SYSCALL(1L,params);
     pid=params[0];
 //----------------------
-    
+    //child 0 parent 1
 	if (pid == 0)
 	{
 		child_pid = _getpid();

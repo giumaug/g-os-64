@@ -177,6 +177,7 @@ toc:
 .code32
 
 loader:
+    mov $0xFF, 0x400
  cli
  mov %ebx, MULTIBOOT_INFO
  mov %eax, MULTIBOOT_MAGIC
@@ -332,41 +333,44 @@ long_mode:
  cli
     hlt
 
-#.section .data_trampoline
-#gdt_data_ap:
-# .long 0x0 # null descriptor
-# .long 0x0
+.section .data_trampoline_16
+.align 4
+gdt_data_ap:
+ .long 0x0 # null descriptor
+ .long 0x0
 
-## gdt kernel code segment: # code descriptor
-# .word 0xFFFF # limit low
-# .word 0x0 # base low
-# .byte 0x0 # base middle
-# .byte 0B10011010 # access
-# .byte 0B11001111 # granularity + high limit
-# .byte 0x0 # base high
+# gdt kernel code segment: # code descriptor
+ .word 0xFFFF # limit low
+ .word 0x0 # base low
+ .byte 0x0 # base middle
+ .byte 0B10011010 # access
+ .byte 0B11001111 # granularity + high limit
+ .byte 0x0 # base high
 
-## gdt kernel data segment: # data descriptor
-# .word 0x0FFFF # limit low (Same as code)
-# .word 0x0 # base low
-# .byte 0x0 # base middle
-# .byte 0B10010010 # access
-# .byte 0B11001111 # granularity
-# .byte 0x0 # base high
+# gdt kernel data segment: # data descriptor
+ .word 0x0FFFF # limit low (Same as code)
+ .word 0x0 # base low
+ .byte 0x0 # base middle
+ .byte 0B10010010 # access
+ .byte 0B11001111 # granularity
+ .byte 0x0 # base high
 
-#end_of_gdt_ap:
-#toc_ap:
-# .word end_of_gdt_ap - gdt_data_ap - 1
-# .long gdt_data_ap
+end_of_gdt_ap:
+toc_ap:
+ .word end_of_gdt_ap - gdt_data_ap - 1
+ .long gdt_data_ap
 
-#.section code_trampoline
-#.code16
-#ap_trampoline_start:
-# lgdt toc_ap
-# mov %cr0,%eax
-# or $0x10001,%eax
-# mov %eax,%cr0
-# jmp $0x08,$ap_trampoline_pmode
+.section .code_trampoline_16
+.code16
+ap_trampoline_start:
+    cli
+ lgdt toc_ap
+ mov %cr0,%eax
+ or $0x0001,%eax
+ mov %eax,%cr0
+ jmp $0x08,$ap_trampoline_pmode
 
+.section .code_trampoline
 .code32
 ap_trampoline_pmode:
     mov $0b10100000, %eax
@@ -383,224 +387,235 @@ ap_trampoline_pmode:
     mov %ebx, %cr0
 
 ##qui perdo vecchio valore di ebx to check
-# mov %cr0, %ebx
-# or $0x80000001, %ebx
-# mov %ebx, %cr0
-# lgdt toc
-# jmp $0x08,$ap_trampoline_lmode
+    mov %cr0, %ebx
+    or $0x80000001, %ebx
+    mov %ebx, %cr0
+    lgdt toc
+    jmp $0x08,$ap_trampoline_lmode
 
-##The most common and basic method is to execute the CPUID instruction with EAX = 1.
-##The APIC ID is returned in the EBX register, specifically in bits 31 to 24 (the upper 8 bits of the
+#The most common and basic method is to execute the CPUID instruction with EAX = 1.
+#The APIC ID is returned in the EBX register, specifically in bits 31 to 24 (the upper 8 bits of the
 
-#ap_trampoline_lmode:
-# mov $0x1, %eax
-# #cpuid
-# and %ebx, 0xff000000
-#case_cpu_0:
-# cmp %ebx, 0
- # jne case_cpu_1
-# mov $0, %ax
-# #mov %ax, AP_GDT_DESC_INDX
-# jmp end_switch
-#case_cpu_1:
-# cmp %ebx, 1
- # jne case_cpu_2
-# mov $1, %ax
-# #mov %ax, AP_GDT_DESC_INDX
-# jmp end_switch
-#case_cpu_2:
-# cmp %ebx, 2
- # jne case_cpu_3
-# mov $2, %ax
-# #mov $2, AP_GDT_DESC_INDX
-# jmp end_switch
-#case_cpu_3:
-# cmp %ebx, 3
- # jne case_cpu_4
-# mov $3, %ax
-# #mov $3, AP_GDT_DESC_INDX
-# jmp end_switch
-#case_cpu_4:
-# cmp %ebx, 4
- # jne case_cpu_5
-# mov $4, %ax
-# #mov $4, AP_GDT_DESC_INDX
-# jmp end_switch
-#case_cpu_5:
-# cmp %ebx, 5
- # jne case_cpu_6
-# mov $5, %ax
-# #mov $5, AP_GDT_DESC_INDX
-# jmp end_switch
-#case_cpu_6:
-# cmp %ebx, 6
- # jne case_cpu_7
-# mov $6, %ax
-# #mov $6, AP_GDT_DESC_INDX
-# jmp end_switch
-#case_cpu_7:
-# cmp %ebx, 7
- # jne case_cpu_8
-# mov $7, %ax
-# #mov $7, AP_GDT_DESC_INDX
-# jmp end_switch
-#case_cpu_8:
-# cmp %ebx, 8
- # jne case_cpu_9
-# mov $8, %ax
-# #mov $8, AP_GDT_DESC_INDX
-# jmp end_switch
-#case_cpu_9:
-# cmp %ebx, 9
- # jne case_cpu_10
-# mov $9, %ax
-# #mov $9, AP_GDT_DESC_INDX
-# jmp end_switch
-#case_cpu_10:
-# cmp %ebx, 10
- # jne case_cpu_11
-# mov $10, %ax
-# #mov $10, AP_GDT_DESC_INDX
-# jmp end_switch
-#case_cpu_11:
-# cmp %ebx, 11
- # jne case_cpu_12
-# mov $11, %ax
-# #mov $11, AP_GDT_DESC_INDX
-# jmp end_switch
-#case_cpu_12:
-# cmp %ebx, 12
- # jne case_cpu_13
-# mov $12, %ax
-# #mov $12, AP_GDT_DESC_INDX
-# jmp end_switch
-#case_cpu_13:
-# cmp %ebx, 13
- # jne case_cpu_14
-# mov $13, %ax
-# #mov $13, AP_GDT_DESC_INDX
-# jmp end_switch
-#case_cpu_14:
-# cmp %ebx, 14
- # jne case_cpu_15
-# mov $14, %ax
-# #mov $14, AP_GDT_DESC_INDX
-# jmp end_switch
-#case_cpu_15:
-# cmp %ebx, 15
- # jne case_cpu_16
-# mov $15, %ax
-# #mov $15, AP_GDT_DESC_INDX
-# jmp end_switch
-#case_cpu_16:
-# cmp %ebx, 16
- # jne case_cpu_17
-# mov $16, %ax
-# #mov $16, AP_GDT_DESC_INDX
-# jmp end_switch
-#case_cpu_17:
-# cmp %ebx, 17
- # jne case_cpu_18
-# mov $17, %ax
-# #mov $17, AP_GDT_DESC_INDX
-# jmp end_switch
-#case_cpu_18:
-# cmp %ebx, 18
- # jne case_cpu_19
-# mov $18, %ax
-# #mov $18, AP_GDT_DESC_INDX
-# jmp end_switch
-#case_cpu_19:
-# cmp %ebx, 19
- # jne case_cpu_20
-# mov $19, %ax
-# #mov $19, AP_GDT_DESC_INDX
-# jmp end_switch
-#case_cpu_20:
-# cmp %ebx, 20
- # jne case_cpu_21
-# mov $20, %ax
-# #mov $20, AP_GDT_DESC_INDX
-# jmp end_switch
-#case_cpu_21:
-# cmp %ebx, 21
- # jne case_cpu_22
-# mov $21, %ax
-# #mov $21, AP_GDT_DESC_INDX
-# jmp end_switch
-#case_cpu_22:
-# cmp %ebx, 22
- # jne case_cpu_23
-# mov $22, %ax
-# #mov $22, AP_GDT_DESC_INDX
-# jmp end_switch
-#case_cpu_23:
-# cmp %ebx, 23
- # jne case_cpu_24
-# mov $23, %ax
-# #mov $23, AP_GDT_DESC_INDX
-# jmp end_switch
-#case_cpu_24:
-# cmp %ebx, 24
- # jne case_cpu_25
-# mov $24, %ax
-# #mov $24, AP_GDT_DESC_INDX
-# jmp end_switch
-#case_cpu_25:
-# cmp %ebx, 25
- # jne case_cpu_26
-# mov $25, %ax
-# #mov $25, AP_GDT_DESC_INDX
-# jmp end_switch
-#case_cpu_26:
-# cmp %ebx, 26
- # jne case_cpu_27
-# mov $26, %ax
-# #mov $26, AP_GDT_DESC_INDX
-# jmp end_switch
-#case_cpu_27:
-# cmp %ebx, 27
- # jne case_cpu_28
-# mov $27, %ax
-# #mov $27, AP_GDT_DESC_INDX
-# jmp end_switch
-#case_cpu_28:
-# cmp %ebx, 28
- # jne case_cpu_29
-# mov $28, %ax
-# #mov $28, AP_GDT_DESC_INDX
-# jmp end_switch
-#case_cpu_29:
-# cmp %ebx, 29
- # jne case_cpu_30
-# mov $29, %ax
-# #mov $29, AP_GDT_DESC_INDX
-# jmp end_switch
-#case_cpu_30:
-# cmp %ebx, 30
- # jne case_cpu_31
-# mov $30, %ax
-# #mov $30, AP_GDT_DESC_INDX
-# jmp end_switch
-#case_cpu_31:
-# cmp %ebx, 31
- # mov $31, %ax
-# #mov $31, AP_GDT_DESC_INDX
+ap_trampoline_lmode:
+    mov $0x1, %eax
+    #cpuid
+    and %ebx, 0xff000000
+case_cpu_0:
+    cmp %ebx, 0
+    jne case_cpu_1
+    mov $0, %ax
+ #mov %ax, AP_GDT_DESC_INDX
+ jmp end_switch
+case_cpu_1:
+    cmp %ebx, 1
+    jne case_cpu_2
+    mov $1, %ax
+ #mov %ax, AP_GDT_DESC_INDX
+ jmp end_switch
+case_cpu_2:
+    cmp %ebx, 2
+    jne case_cpu_3
+    mov $2, %ax
+ #mov $2, AP_GDT_DESC_INDX
+ jmp end_switch
+case_cpu_3:
+    cmp %ebx, 3
+    jne case_cpu_4
+    mov $3, %ax
+ #mov $3, AP_GDT_DESC_INDX
+ jmp end_switch
+case_cpu_4:
+    cmp %ebx, 4
+    jne case_cpu_5
+    mov $4, %ax
+ #mov $4, AP_GDT_DESC_INDX
+ jmp end_switch
+case_cpu_5:
+    cmp %ebx, 5
+    jne case_cpu_6
+    mov $5, %ax
+ #mov $5, AP_GDT_DESC_INDX
+ jmp end_switch
+case_cpu_6:
+    cmp %ebx, 6
+    jne case_cpu_7
+    mov $6, %ax
+ #mov $6, AP_GDT_DESC_INDX
+ jmp end_switch
+case_cpu_7:
+    cmp %ebx, 7
+    jne case_cpu_8
+    mov $7, %ax
+ #mov $7, AP_GDT_DESC_INDX
+ jmp end_switch
+case_cpu_8:
+    cmp %ebx, 8
+    jne case_cpu_9
+    mov $8, %ax
+ #mov $8, AP_GDT_DESC_INDX
+ jmp end_switch
+case_cpu_9:
+    cmp %ebx, 9
+    jne case_cpu_10
+    mov $9, %ax
+ #mov $9, AP_GDT_DESC_INDX
+ jmp end_switch
+case_cpu_10:
+    cmp %ebx, 10
+    jne case_cpu_11
+    mov $10, %ax
+ #mov $10, AP_GDT_DESC_INDX
+ jmp end_switch
+case_cpu_11:
+    cmp %ebx, 11
+    jne case_cpu_12
+    mov $11, %ax
+ #mov $11, AP_GDT_DESC_INDX
+ jmp end_switch
+case_cpu_12:
+    cmp %ebx, 12
+    jne case_cpu_13
+    mov $12, %ax
+ #mov $12, AP_GDT_DESC_INDX
+ jmp end_switch
+case_cpu_13:
+    cmp %ebx, 13
+    jne case_cpu_14
+    mov $13, %ax
+ #mov $13, AP_GDT_DESC_INDX
+ jmp end_switch
+case_cpu_14:
+    cmp %ebx, 14
+    jne case_cpu_15
+    mov $14, %ax
+ #mov $14, AP_GDT_DESC_INDX
+ jmp end_switch
+case_cpu_15:
+    cmp %ebx, 15
+    jne case_cpu_16
+    mov $15, %ax
+ #mov $15, AP_GDT_DESC_INDX
+ jmp end_switch
+case_cpu_16:
+    cmp %ebx, 16
+    jne case_cpu_17
+    mov $16, %ax
+ #mov $16, AP_GDT_DESC_INDX
+ jmp end_switch
+case_cpu_17:
+    cmp %ebx, 17
+    jne case_cpu_18
+    mov $17, %ax
+ #mov $17, AP_GDT_DESC_INDX
+ jmp end_switch
+case_cpu_18:
+    cmp %ebx, 18
+    jne case_cpu_19
+    mov $18, %ax
+ #mov $18, AP_GDT_DESC_INDX
+ jmp end_switch
+case_cpu_19:
+    cmp %ebx, 19
+    jne case_cpu_20
+    mov $19, %ax
+ #mov $19, AP_GDT_DESC_INDX
+ jmp end_switch
+case_cpu_20:
+    cmp %ebx, 20
+    jne case_cpu_21
+    mov $20, %ax
+ #mov $20, AP_GDT_DESC_INDX
+ jmp end_switch
+case_cpu_21:
+    cmp %ebx, 21
+    jne case_cpu_22
+    mov $21, %ax
+ #mov $21, AP_GDT_DESC_INDX
+ jmp end_switch
+case_cpu_22:
+    cmp %ebx, 22
+    jne case_cpu_23
+    mov $22, %ax
+ #mov $22, AP_GDT_DESC_INDX
+ jmp end_switch
+case_cpu_23:
+    cmp %ebx, 23
+    jne case_cpu_24
+    mov $23, %ax
+ #mov $23, AP_GDT_DESC_INDX
+ jmp end_switch
+case_cpu_24:
+    cmp %ebx, 24
+    jne case_cpu_25
+    mov $24, %ax
+ #mov $24, AP_GDT_DESC_INDX
+ jmp end_switch
+case_cpu_25:
+    cmp %ebx, 25
+    jne case_cpu_26
+    mov $25, %ax
+ #mov $25, AP_GDT_DESC_INDX
+ jmp end_switch
+case_cpu_26:
+    cmp %ebx, 26
+    jne case_cpu_27
+    mov $26, %ax
+ #mov $26, AP_GDT_DESC_INDX
+ jmp end_switch
+case_cpu_27:
+    cmp %ebx, 27
+    jne case_cpu_28
+    mov $27, %ax
+ #mov $27, AP_GDT_DESC_INDX
+ jmp end_switch
+case_cpu_28:
+    cmp %ebx, 28
+    jne case_cpu_29
+    mov $28, %ax
+ #mov $28, AP_GDT_DESC_INDX
+ jmp end_switch
+case_cpu_29:
+    cmp %ebx, 29
+    jne case_cpu_30
+    mov $29, %ax
+ #mov $29, AP_GDT_DESC_INDX
+ jmp end_switch
+case_cpu_30:
+    cmp %ebx, 30
+    jne case_cpu_31
+    mov $30, %ax
+ #mov $30, AP_GDT_DESC_INDX
+ jmp end_switch
+case_cpu_31:
+    cmp %ebx, 31
+    mov $31, %ax
+ #mov $31, AP_GDT_DESC_INDX
 
-#end_switch:
-# mov %ax, AP_GDT_DESC_INDX
-# mov AP_GDT_DESC, %ecx
-# mov AP_GDT_DESC_INDX, %ebx
-# imul $6, %ebx
-# add %ebx, %ecx
-# mov %ecx, AP_GDT_DESC_INDX
-# lgdt [AP_GDT_DESC_INDX]
-# jmp $0x08,$end_init_ap
+end_switch:
+    mov %ax, AP_GDT_DESC_INDX
+    mov AP_GDT_DESC, %ecx
+    mov AP_GDT_DESC_INDX, %ebx
+    imul $6, %ebx
+    add %ebx, %ecx
+    mov %ecx, AP_GDT_DESC_INDX
+    lgdt [AP_GDT_DESC_INDX]
+    jmp $0x08,$end_init_ap
 
-#end_init_ap:
-# hlt
+end_init_ap:
+ hlt
 ap_trampoline_end:
  hlt
+
+
+#TEST
+#.code16
+#ap_trampoline_start:
+# hlt
+#ap_trampoline_end:
+# hlt
+
+
+
 
 ##https:
 ##https:

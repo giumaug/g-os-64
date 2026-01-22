@@ -1,8 +1,6 @@
 #ifndef MEMORY_GENERAL_H                
 #define MEMORY_GENERAL_H
 
-#include "system.h"
-
 //Sytem memory must be in [1G-16G] range.
 
 #define ALIGNED_TO_OFFSET(address, offset) ((u64)address + offset) - ((u64)address % offset)

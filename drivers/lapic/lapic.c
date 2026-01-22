@@ -389,60 +389,34 @@ void ap_init()
 		gdt_mem[(56 * i) + 39] = 0x00;
 
 		//gdt tss segment
-		gdt_mem[(56 * i) + 40] = 0x64;							
+		gdt_mem[(56 * i) + 40] = 0x68;							
 		gdt_mem[(56 * i) + 41] = 0x00;
-		gdt_mem[(56 * i) + 42] = ((u64)(gdt_tss + i)) & 0xFFULL;
-		gdt_mem[(56 * i) + 43] = ((u64)(gdt_tss + i)) & 0xFF00ULL;
-		gdt_mem[(56 * i) + 44] = ((u64)(gdt_tss + i)) & 0xFF0000ULL;
+		gdt_mem[(56 * i) + 42] = ((u64)(gdt_tss + (104 * i))) & 0xFFULL;
+		gdt_mem[(56 * i) + 43] = (((u64)(gdt_tss + (104 * i))) & 0xFF00ULL) >> 8;
+		gdt_mem[(56 * i) + 44] = (((u64)(gdt_tss + (104 * i))) & 0xFF0000ULL) >> 16;
 		gdt_mem[(56 * i) + 45] = 0x89;
 		gdt_mem[(56 * i) + 46] = 0x00;
-		gdt_mem[(56 * i) + 47] = ((u64) (gdt_tss + i)) & 0xFF000000ULL;
-		gdt_mem[(56 * i) + 48] = ((u64)(gdt_tss + i)) & 0xFF00000000ULL;
-		gdt_mem[(56 * i) + 49] = ((u64)(gdt_tss + i)) & 0xFF0000000000ULL;
-		gdt_mem[(56 * i) + 50] = ((u64)(gdt_tss + i)) & 0xFF000000000000ULL;
-		gdt_mem[(56 * i) + 51] = ((u64)(gdt_tss + i)) & 0xFF00000000000000ULL;
+		gdt_mem[(56 * i) + 47] = (((u64) (gdt_tss + (104 * i))) & 0xFF000000ULL) >> 24;
+		gdt_mem[(56 * i) + 48] = (((u64)(gdt_tss + (104 * i))) & 0xFF00000000ULL) >> 32;
+		gdt_mem[(56 * i) + 49] = (((u64)(gdt_tss + (104 * i))) & 0xFF0000000000ULL) >> 40;
+		gdt_mem[(56 * i) + 50] = (((u64)(gdt_tss + (104 * i))) & 0xFF000000000000ULL) >> 48;
+		gdt_mem[(56 * i) + 51] = (((u64)(gdt_tss + (104 * i))) & 0xFF00000000000000ULL) >> 56;
 		gdt_mem[(56 * i) + 52] = 0x00;
 		gdt_mem[(56 * i) + 53] = 0x00;
 		gdt_mem[(56 * i) + 54] = 0x00;
 		gdt_mem[(56 * i) + 55] = 0x00;
+		
+		*((u32*)(cpu_gtd_desc + (16 * i))) = 55;
+		*((u64*)(cpu_gtd_desc + (16 * i) + 4)) = gdt_mem + (56 * i);
 	}
-	
-	//.word end_of_gdt - gdt_data - 1 
-    //.long gdt_data
-
-	unsigned int start = &ap_trampoline_start;
-	unsigned int end = &ap_trampoline_end;
-	unsigned int size = end - start;
-	kmemcpy(AP_TRAMPOLINE_ADDR, &ap_trampoline_start, ((unsigned int)(&ap_trampoline_end) - (unsigned int)(&ap_trampoline_start)));
-	
-//	0xC4500 = 11000100010100000000 
-//    vector = 0                                          
-//    delivery mode = init
-//    destination mode = physical
-//    delivery status = idle
-//    level = assert      
-//    trigger mode = edge
-//    destination shorthand 11
-//
-//    0x44608 = 11000100011000001000
-//    vector = 8
-//    delivery mode = start-up
-//    destination mode = physical
-//    delivery status = idle
-//    level = assert
-//    trigger mode = edge
-//    destination shorthand 11
-	
 	
 	*((volatile u32*)(LAPIC_BASE + 0x280)) = 0;
 	*((volatile u32*)(LAPIC_BASE + 0x310)) = (*((volatile u32*)(LAPIC_BASE + 0x310))) & 0xFFFFFF;
-	//*((volatile u32*)(LAPIC_BASE + 0x300)) = (*((volatile u32*)(LAPIC_BASE + 0x300)) & 0xC0500); //0xC4500
 	*((volatile u32*)(LAPIC_BASE + 0x300)) = 0xC0500;
 	do { __asm__ __volatile__ ("pause" : : : "memory"); }while(*((volatile u32*)(LAPIC_BASE + 0x300)) & (1 << 12));
 	
 	*((volatile u32*)(LAPIC_BASE + 0x280)) = 0;
 	*((volatile u32*)(LAPIC_BASE + 0x310)) = (*((volatile u32*)(LAPIC_BASE + 0x310))) & 0xFFFFFF;
-	//*((volatile u32*)(LAPIC_BASE + 0x300)) = (*((volatile u32*)(LAPIC_BASE + 0x300)) & 0xC0608); //0x44608
 	*((volatile u32*)(LAPIC_BASE + 0x300)) = 0xC0608;
 	do { __asm__ __volatile__ ("pause" : : : "memory"); }while(*((volatile u32*)(LAPIC_BASE + 0x300)) & (1 << 12));
 }
@@ -617,6 +591,11 @@ u8 get_current_process_context()
 		}
 	}
 	return mapId;
+}
+
+void relocate_init_code()
+{
+	kmemcpy(AP_TRAMPOLINE_DST_ADDR, AP_TRAMPOLINE_SRC_ADDR, AP_TRAMPOLINE_SIZE);
 }
 
 

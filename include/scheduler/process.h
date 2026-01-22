@@ -10,7 +10,16 @@
 #define U_STACK_SIZE 		0x4000;
 //#define QUANTUM_DURATION	11931 //10 ms verificare valore piu' appropriato
 #define TICK                    10;  //100ms for each process look cesati pag 260
-#define CURRENT_PROCESS_CONTEXT(current_process_context) do {t_llist_node* node;node=system.process_info->current_process;current_process_context=node->val; } while (0);
+//#define CURRENT_PROCESS_CONTEXT(current_process_context) do {t_llist_node* node;node=system.process_info->current_process;current_process_context=node->val; } while (0);
+
+#define CURRENT_PROCESS_CONTEXT(current_process_context)                                      \
+do                                                                                            \
+{                                                                                             \
+  t_llist_node* node;node=system.process_info->current_process[get_current_process_context()];\
+  current_process_context=node->val;                                                          \
+}                                                                                             \
+while (0);
+
 #define KERNEL_THREAD        0
 #define USERSPACE_PROCESS    1
 #define PROCESS_INIT_FILE   10

@@ -1,9 +1,10 @@
 ENTRY (loader)
-kernel_load_address = 0x100000;                              
+kernel_load_address = 0x100000;
+trampoline_init_address = 0x320000;                        
 
-MEMORY { loader_address_space : ORIGIN = 0x300000, LENGTH = 0x100000 }
+MEMORY { loader_address_space : ORIGIN = 0x300000, LENGTH = 0x20000 }
 MEMORY { kernel_address_space : ORIGIN = 0x400000000, LENGTH = 0x200000 }
-MEMORY { ap_trampoline_address_space : ORIGIN = 0x8000, LENGTH = 0x1000 }
+MEMORY { ap_trampoline_address_space : ORIGIN = 0x8000, LENGTH = 0x2000 }
 
 SECTIONS{
 
@@ -11,7 +12,6 @@ SECTIONS{
 
     .text_1 :{
 		loader.o(.text)
-		/* *(EXCLUDE_FILE (loader.o) .code_trampoline) */
     }>loader_address_space
 
     .rodata_1 :{
@@ -20,7 +20,6 @@ SECTIONS{
 
     .data_1 :{
         loader.o(.data)
-        /* *(EXCLUDE_FILE (loader.o) .code_trampoline) */
     }>loader_address_space
 
     .bss_1 :{
@@ -29,40 +28,39 @@ SECTIONS{
 
     /* kernel address space */
     
-#    .pippo_1 :AT(kernel_load_address){
-#	text_a = .;
-#	loader.o(.multiboot)
-#	 *(EXCLUDE_FILE (loader.o) .text)
-#    }>kernel_address_space
-
     .text :AT(kernel_load_address){
 	text = .;
-	loader.o(.multiboot)
-	*(EXCLUDE_FILE (loader.o) .text) 
+	KEEP(*(.multiboot)) 
+	*(EXCLUDE_FILE (loader.o trampoline.o) .text) 
     }>kernel_address_space
 
     .rodata :AT(kernel_load_address + (rodata - text)){
 	rodata = .;
-	*(EXCLUDE_FILE (loader.o).rodata)
+	*(EXCLUDE_FILE (loader.o trampoline.o) .rodata)
     }>kernel_address_space 
 
     .data :AT(kernel_load_address +(data - text)){
 	data = .;
-	*(EXCLUDE_FILE (loader.o) .data)
+	*(EXCLUDE_FILE (loader.o trampoline.o) .data)
     }>kernel_address_space 
 
     .bss :AT(kernel_load_address + (bss - text)){
 	bss = .;
-	*(EXCLUDE_FILE (loader.o) .bss)
+	*(EXCLUDE_FILE (loader.o trampoline.o) .bss)
     }>kernel_address_space
    
-    .text_2 :{
-     loader.o(.code_trampoline)
+    .text_2 :AT(trampoline_init_address){
+    text_2 = .;
+    trampoline.o(.text)
     }>ap_trampoline_address_space
-
-    .data_2 :{
-    loader.o(.data_trampoline_16)
+   
+    .data_2 :AT(trampoline_init_address + (data_2 - text_2)){
+    data_2 = .;
+    trampoline.o(.data)
     }>ap_trampoline_address_space
-    
-    
+      
+    .bss_2 :AT(trampoline_init_address + (bss_2 - text_2)){
+    bss_2 = .;
+    trampoline.o(.bss)
+    }>ap_trampoline_address_space
 }

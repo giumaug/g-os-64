@@ -36,10 +36,14 @@
 #define EOI_TO_LAPIC unsigned char* p = (LAPIC_BASE + EOI); \
     *p = 0;
     
-#define AP_TRAMPOLINE_ADDR 0x8000
+#define AP_TRAMPOLINE_DST_ADDR 0x8000
+#define AP_TRAMPOLINE_SRC_ADDR 0x320000
+#define AP_TRAMPOLINE_SIZE 2000
+
 
 void init_lapic();
 void ap_init();
+void relocate_init_code();
 u8 get_current_process_context();
 
 #endif
