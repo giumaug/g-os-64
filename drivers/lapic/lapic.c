@@ -223,10 +223,6 @@ void int_handler_lapic()
 		}
 		else 
 		{
-			if (process_context->pid != 0)
-			{
-				process_context->tick--;
-			}
 			if (process_context->tick == 0) 
 			{
 				process_context->tick = TICK;
