@@ -19,6 +19,11 @@ void process_0()
 	argv[1] = NULL;
 	pid = 0;
 	
+	t_llist* xxx;
+	struct s_scheduler_desc* yyy;
+	xxx = system.scheduler_desc[0]->scheduler_queue[0];
+	yyy = system.scheduler_desc[0];
+	
     //THREAD_FORK(pid);
     
 //--------------    

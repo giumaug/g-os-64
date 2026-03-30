@@ -43,7 +43,7 @@ typedef struct s_system
 	t_console_desc* active_console_desc;
 	struct s_buddy_desc* buddy_desc;
 	u64* master_page_pml4;
-	struct s_scheduler_desc* scheduler_desc;
+	struct s_scheduler_desc* scheduler_desc[NUM_CPU];
 	struct s_ext2* root_fs;
 	struct s_ext2* scnd_fs;
 	struct s_device_desc* device_desc;

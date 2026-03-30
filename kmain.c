@@ -20,15 +20,16 @@ extern u64 *AP_TSS;
 void process_0();
 unsigned int seed=105491;
 unsigned char tmp_kernel_stack[4096];
+u64 tmp_phy_kernel_stack[NUM_CPU - 1];
+
 t_system system;
 	
 void kmain(multiboot_info_t* mbd, u64 magic)
 {
-	int i;
+	static int i;
 	static multiboot_info_t _mbd;
 	_mbd = *mbd;
 	static struct t_process_info process_info;
-	static t_scheduler_desc scheduler_desc;
 	static unsigned int* init_data;
     //init_data = init_data_add;
     init_data = &TSS_ADD;
@@ -40,24 +41,35 @@ void kmain(multiboot_info_t* mbd, u64 magic)
 	static u64 kernel_stack;
 	static t_ahci_device_desc* device_desc_ahci = NULL;
 	static t_device_desc* device_desc = NULL;
+	
 	system.time = 0;
 	system.flush_network = 0;
  	CLI
 	system.force_scheduling = 0;
 	system.process_info = &process_info;
-	system.scheduler_desc = &scheduler_desc;
 	system.int_path_count = 0;
-	system.scheduler_desc->scheduler_queue[0] = 0;
+	//system.scheduler_desc->scheduler_queue[0] = 0;
 	relocate_init_code();
 	init_idt();
 	system.master_page_pml4 = (void*)init_virtual_memory();
 	SWITCH_PAGE_DIR(FROM_VIRT_TO_PHY(((u64)system.master_page_pml4)))
-	asm volatile ("mov %0,%%rbp;"::"r"(tmp_kernel_stack));
-	asm volatile ("mov %0,%%rsp;"::"r"(tmp_kernel_stack));
+	asm volatile ("mov %0,%%rbp;"::"r"((tmp_kernel_stack + 0xfff)));
+	asm volatile ("mov %0,%%rsp;"::"r"((tmp_kernel_stack + 0xfff)));
 	
 	init_kmallocs();
 	system.buddy_desc = buddy_init();
 	init_scheduler();
+	for (i = 0; i < NUM_CPU; i++)
+	{
+	  system.process_info->pause_queue[i] = new_dllist();
+	  system.process_info->sleep_wait_queue[i] = new_dllist();
+	  if (i > 0)
+	  {
+	    tmp_phy_kernel_stack[i - 1] = buddy_alloc_page(system.buddy_desc,KERNEL_STACK_SIZE);  
+      }
+	  //phy_kernel_stack[i] = FROM_VIRT_TO_PHY(buddy_alloc_page(system.buddy_desc,KERNEL_STACK_SIZE));
+	  //map_vm_mem(system.master_page_pml4, (KERNEL_STACK-KERNEL_STACK_SIZE), phy_kernel_stack[i], KERNEL_STACK_SIZE, 3);
+	}
 	system.timer_list = new_dllist();
 	init_ioapic();
 	init_lapic();
@@ -81,12 +93,13 @@ void kmain(multiboot_info_t* mbd, u64 magic)
 	i_desc.pad=0;	
 	set_idt_entry(0x80,&i_desc);
 
-	system.process_info->sleep_wait_queue = new_dllist();	
+	//system.process_info->sleep_wait_queue = new_dllist();	
 	system.process_info->next_pid = 1;
 	system.process_info->pid_hash = hashtable_init(PID_HASH_SIZE);
 	system.process_info->pgid_hash = hashtable_init(PGID_HASH_SIZE);
 	
-	ap_init();
+	//ap_init();
+	
 	
 	process_context = kmalloc(sizeof(struct t_process_context));
 	process_context->root_dir_inode_number = ROOT_INODE;
@@ -101,39 +114,47 @@ void kmain(multiboot_info_t* mbd, u64 magic)
 	process_context->sig_num = 0;
 	process_context->sleep_wait_queue_ref = 0;
 	hashtable_put(system.process_info->pgid_hash,0,new_dllist());
-	
     process_context->tick = TICK;
 	process_context->processor_reg.rsp = NULL;
 	process_context->console_desc = &console_desc;
-	//CI VA MESSO IL BSP, serve pure moltiplicare lo scheduler per il numero di CPU
-	system.process_info->current_process[0] = ll_prepend(system.scheduler_desc->scheduler_queue[9],process_context);
-	system.process_info->tss[0].ss = NULL;
-	system.process_info->tss[0].esp = *init_data;
 	
-	u8* gdt_tss = &AP_TSS;
-	for (i = 1; i < NUM_CPU - 1; i++)
-	{
-		system.process_info->tss[0].ss = NULL;
-		system.process_info->tss[i].esp = gdt_tss + ((i -1) * 100) + 4; 
-	}
-	system.process_info->pause_queue = new_dllist();
 	process_context->phy_kernel_stack = FROM_VIRT_TO_PHY(buddy_alloc_page(system.buddy_desc,KERNEL_STACK_SIZE));
+	//process_context->phy_kernel_stack = FROM_VIRT_TO_PHY(phy_kernel_stack[0]);
 	process_context->process_type = KERNEL_THREAD;
 	process_context->file_desc = dc_hashtable_init(PROCESS_INIT_FILE, NULL);
 	process_context->socket_desc = hashtable_init(PROCESS_INIT_SOCKET);
 	process_context->next_sd = 0;
 	process_context->sig_num = 0;
 	process_context->page_pml4 = buddy_alloc_page(system.buddy_desc,0x1000);
+	system.process_info->current_process[0] = ll_prepend(system.scheduler_desc[0]->scheduler_queue[9],process_context);
+	system.process_info->tss[0].ss = NULL;
+	system.process_info->tss[0].esp = *init_data;
+	
+	//process_context->phy_kernel_stack = FROM_VIRT_TO_PHY(buddy_alloc_page(system.buddy_desc,KERNEL_STACK_SIZE));
+	//process_context->process_type = KERNEL_THREAD;
+	//process_context->file_desc = dc_hashtable_init(PROCESS_INIT_FILE, NULL);
+	//process_context->socket_desc = hashtable_init(PROCESS_INIT_SOCKET);
+	//process_context->next_sd = 0;
+	//process_context->sig_num = 0;
+	//process_context->page_pml4 = buddy_alloc_page(system.buddy_desc,0x1000);
 	 
+	ap_init();
+	u8* gdt_tss = &AP_TSS;
+	for (i = 1; i < NUM_CPU - 1; i++)
+	{
+		system.process_info->tss[0].ss = NULL;
+		system.process_info->tss[i].esp = gdt_tss + ((i -1) * 100) + 4; 
+	}
+	
+	
 	init_vm_process(process_context);
 	for (i = 0; i < NUM_CPU; i++)
 	{
 		*(system.process_info->tss[i].esp) = KERNEL_STACK;
-	}             		
+	}       		
 	kernel_stack = KERNEL_STACK - 100;
 	asm volatile ("mov %0,%%rbp;"::"r"(kernel_stack));
 	asm volatile ("mov %0,%%rsp;"::"r"(kernel_stack));
-		
 	STI
 	process_0();	       	
 }

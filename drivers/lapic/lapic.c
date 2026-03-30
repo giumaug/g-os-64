@@ -10,6 +10,7 @@ extern u64 *AP_TSS;
 extern u64 *AP_GDT_DESC;
 extern u32 ap_trampoline_start;
 extern u32 ap_trampoline_end;
+extern u64 tmp_phy_kernel_stack[NUM_CPU - 1];
 
 static void init_timer();
 static void int_handler_lapic();
@@ -138,8 +139,8 @@ static void write_reg(u32 reg_offset, u32 val)
 void int_handler_lapic()
 {
 	int is_schedule = 0;
-	struct t_process_context* process_context;
-	struct t_process_context* sleeping_process;
+	struct t_process_context* process_context = NULL;
+	struct t_process_context* sleeping_process = NULL;
 	struct t_processor_reg processor_reg;
 	t_llist_node* next = NULL;
 	t_llist_node* sentinel = NULL;
@@ -151,20 +152,28 @@ void int_handler_lapic()
 	t_llist_node* node = NULL;
 	t_llist_node* first_node = NULL;
 	t_timer* timer = NULL;
+	int cpuId;
 	
 	SAVE_PROCESSOR_REG
 	EOI_TO_LAPIC
 	//SWITCH_DS_TO_KERNEL_MODE
 	//process_context = system.process_info->current_process->val;
 	
-	system.time += QUANTUM_DURATION;
+	struct t_process_context* _xxx;
+	CURRENT_PROCESS_CONTEXT(_xxx);
+	
+	cpuId = get_current_process_context();
+	if (cpuId == CPU_0)
+	{
+	  system.time += QUANTUM_DURATION;
+	}
 	if (system.int_path_count > 0)
 	{
 		goto EXIT_HANDLER;
 	}
-	sleeping_process = system.active_console_desc->sleeping_process;
-	sentinel = ll_sentinel(system.process_info->sleep_wait_queue);
-	next = ll_first(system.process_info->sleep_wait_queue);
+	sleeping_process = system.active_console_desc->sleeping_process[cpuId];
+	sentinel = ll_sentinel(system.process_info->sleep_wait_queue[cpuId]);
+	next = ll_first(system.process_info->sleep_wait_queue[cpuId]);
 	next_process = next->val;
 	//THIS STUFF MUST BE MOVED INSIDE ASSIGNED SLEEP MANAGER LIKE IO
 	while(next != sentinel)
@@ -186,7 +195,7 @@ void int_handler_lapic()
 			next_process->assigned_sleep_time = 0;
 			next_process->proc_status = RUNNING;
 			queue_index = next_process->curr_sched_queue_index;
-			ll_append(system.scheduler_desc->scheduler_queue[queue_index], next_process);
+			ll_append(system.scheduler_desc[cpuId]->scheduler_queue[queue_index], next_process);
 			old_node = next;
 			next=ll_next(next);
 			ll_delete_node(old_node);
@@ -202,7 +211,7 @@ void int_handler_lapic()
 	if (sleeping_process != NULL && !system.active_console_desc->is_empty)
 	{
 		_awake(sleeping_process);
-		system.active_console_desc->sleeping_process = NULL;
+		system.active_console_desc->sleeping_process[cpuId] = NULL;
 	}
 	else
 	{	
@@ -223,6 +232,7 @@ void int_handler_lapic()
 		}
 		else 
 		{
+			process_context->tick--;
 			if (process_context->tick == 0) 
 			{
 				process_context->tick = TICK;
@@ -249,14 +259,13 @@ EXIT_HANDLER:;
 	}
 	while(node != ll_first(system.timer_list));
 	//EXIT_INT_HANDLER(is_schedule,processor_reg);
-	
 	static struct t_process_context _current_process_context;                                                  	
 	static struct t_process_context _old_process_context;                                                      	
 	static struct t_process_context _new_process_context;	                                                        
 	static struct t_processor_reg _processor_reg;                                                          
 	static unsigned int _action2; 
-	static u8 stop = 0;                                                                            
-                                                                                                                     
+	static u8 stop = 0;
+	                                                                                                                 
 	CLI                                                                                                             
 	if (system.int_path_count == 0 && system.force_scheduling == 0 && system.flush_network == 1)                    
 	{                                                                                                               
@@ -265,7 +274,7 @@ EXIT_HANDLER:;
 		equeue_packet(system.network_desc);                                                             
 		system.flush_network = 1;                                                                       
 	}                                                                                                               
-	_action2=is_schedule;                                                                                      
+	_action2=is_schedule;                                                                        
 	_current_process_context=*(struct t_process_context*)system.process_info->current_process[get_current_process_context()]->val;                 
 	_old_process_context=_current_process_context;                                                                  
 	_processor_reg=processor_reg;                                                                                   
@@ -313,7 +322,7 @@ EXIT_HANDLER:;
 			buddy_free_page(system.buddy_desc,FROM_PHY_TO_VIRT(_old_process_context.phy_kernel_stack));     
 		}                                                                                                       
 		RESTORE_PROCESSOR_REG                                                                                   
-        EXIT_SYSCALL_HANDLER
+        //--EXIT_SYSCALL_HANDLER
         asm("pop %rbp;iretq;");                                                                               
 	}                                                                                                          	
 	else                                                                                                       	
@@ -402,9 +411,11 @@ void ap_init()
 		gdt_mem[(56 * i) + 54] = 0x00;
 		gdt_mem[(56 * i) + 55] = 0x00;
 		
-		*((u32*)(cpu_gtd_desc + (16 * i))) = 55;
-		*((u64*)(cpu_gtd_desc + (16 * i) + 4)) = gdt_mem + (56 * i);
+		*((u16*)(cpu_gtd_desc + (16 * i))) = 55;
+		*((u64*)(cpu_gtd_desc + (16 * i) + 2)) = gdt_mem + (56 * i);
 	}
+	//stack setup
+	//kernel_stack_addr = buddy_alloc_page(system.buddy_desc,KERNEL_STACK_SIZE);
 	
 	*((volatile u32*)(LAPIC_BASE + 0x280)) = 0;
 	*((volatile u32*)(LAPIC_BASE + 0x310)) = (*((volatile u32*)(LAPIC_BASE + 0x310))) & 0xFFFFFF;
@@ -593,6 +604,30 @@ void relocate_init_code()
 {
 	kmemcpy(AP_TRAMPOLINE_DST_ADDR, AP_TRAMPOLINE_SRC_ADDR, AP_TRAMPOLINE_SIZE);
 }
+
+void ap_post_init(int cpuId)
+{
+  static unsigned int params[1];
+  static struct t_process_context* process_context = NULL;
+  static u64 kernel_stack;
+  static int _cpuId;
+    
+  _cpuId = cpuId;
+  process_context = kmalloc(sizeof(struct t_process_context));
+  process_context->phy_kernel_stack = FROM_VIRT_TO_PHY(buddy_alloc_page(system.buddy_desc,KERNEL_STACK_SIZE));
+  init_vm_process(process_context);
+  
+  kernel_stack = KERNEL_STACK - 100;
+  asm volatile ("mov %0,%%rbp;"::"r"(kernel_stack));
+  asm volatile ("mov %0,%%rsp;"::"r"(kernel_stack));
+  
+  buddy_free_page(system.buddy_desc, tmp_phy_kernel_stack[_cpuId - 1]);
+  system.process_info->current_process[_cpuId] = ll_prepend(system.scheduler_desc[_cpuId]->scheduler_queue[9],process_context);
+  
+  params[0]=0;       
+  SYSCALL(13L,params);
+}
+	
 
 
 

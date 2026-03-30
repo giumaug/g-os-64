@@ -230,7 +230,7 @@ void syscall_handler()
 		case 42:
  		params[1] = _tcsetpgrp(params[0]);   
 		break;
-
+		
 		case 101: 
 		on_exit_action=1;
 		break;

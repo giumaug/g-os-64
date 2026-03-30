@@ -18,6 +18,8 @@
 #AP GDT ADDRESS
 .align 4
 .lcomm AP_GDT_DESC, 0x200 #10x32 (max 32 cpu) I reserve 16 bytes for each gdt_desc for memory alignment.
+#REFERENCE TO AP_GDT_DESC
+.lcomm AP_GDT_DESC_REF 8
 
 .section .data
 .align 4
@@ -254,36 +256,40 @@ case_cpu_30:
 case_cpu_31:
     cmp $CPU_31, %ebx
     mov $30, %rax 
-
-#end_switch:   
-#    movabs $idt_ptr, %r9
-#    mov %r9, AP_IDT
-#    lidt AP_IDT
-#    mov $AP_TSS, %r8
-#    mov $AP_GDT, %rdx
-#    mov $AP_GDT_DESC_INDX, %rbx
-#    mov %rax, AP_GDT_DESC_INDX
-#    mov $AP_GDT_DESC, %rcx
-#    mov  AP_GDT_DESC_INDX, %rbx
-#    imul $0x10, %rbx
-#    add %rbx, %rcx
-#    mov %rcx, AP_GDT_DESC_INDX             
-#    lgdt (%rcx)           				
-#    #jmp	$0x08,$end_init_ap    
-#end_init_ap:
-#	hlt
 	
 end_switch:   
     movabs $idt_ptr, %r9
     mov %r9, AP_IDT
-    lidt AP_IDT
+    mov AP_IDT, %r8
+    lidt (%r9)
     mov $AP_GDT_DESC, %rcx
+    mov %rax, %r10
+    mov %rax, %rdi
+    add $0x1, %rdi
     imul $0x10, %rax
-    add %rax, %rcx        
+    add %rax, %rcx  
+    mov %rcx, AP_GDT_DESC_REF
+    mov AP_GDT_DESC_REF, %r15
+    mov $AP_GDT, %r14    
+    #lgdt AP_GDT_DESC_REF
     lgdt (%rcx)           				
     #jmp	$0x08,$end_init_ap    
 end_init_ap:
-	hlt
+    #-----start stack setup
+    movabs $tmp_phy_kernel_stack, %r9
+    imul $0x8, %r10
+    add %r10, %r9
+    mov (%r9), %r11
+    add $0xfff, %r11
+    #mov (%r9), %rbp
+    #mov (%r9), %rsp
+    mov %r11, %rbp
+    mov %r11, %rsp
+    #-----end stack setup
+    
+	movabs $ap_post_init, %rcx
+	call *%rcx            		
+    sti
 ap_trampoline_end:
 	hlt
 

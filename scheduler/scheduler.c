@@ -53,10 +53,15 @@ void do_context_switch(struct t_process_context *current_process_context,
 
 void init_scheduler()
 {
-	int i;
-	for (i=0;i<10;i++)
+	int i,j;
+	
+	for (i = 0; i < NUM_CPU; i++)
 	{
-		system.scheduler_desc->scheduler_queue[i]=new_dllist();
+	  system.scheduler_desc[i] = kmalloc(sizeof(struct s_scheduler_desc));
+	  for (j = 0; j < 10; j++)
+	  {
+	    system.scheduler_desc[i]->scheduler_queue[j] = new_dllist();
+	  }
 	}
 }
 
@@ -75,16 +80,18 @@ void schedule(struct t_process_context *current_process_context,struct t_process
 	unsigned int priority;
 	unsigned int index;
 	t_llist_node* node_orig;
+	int cpuId;
 
 	index=0;
 	node=system.process_info->current_process[get_current_process_context()];
 	node_orig = node;	
 	current_process_context=node->val;
+	cpuId = get_current_process_context();
 
 	while(!stop && index<10)
 	{
-		sentinel_node=ll_sentinel(system.scheduler_desc->scheduler_queue[index]);
-		next=ll_first(system.scheduler_desc->scheduler_queue[index]);
+		sentinel_node=ll_sentinel(system.scheduler_desc[cpuId]->scheduler_queue[index]);
+		next=ll_first(system.scheduler_desc[cpuId]->scheduler_queue[index]);
 		while(next!=sentinel_node && !stop)
 		{
 			next_process_context=next->val;
@@ -98,7 +105,7 @@ void schedule(struct t_process_context *current_process_context,struct t_process
 					adjust_sched_queue(current_process_context);
 					ll_delete_node(node);
 					queue_index=current_process_context->curr_sched_queue_index;
-					ll_append(system.scheduler_desc->scheduler_queue[queue_index],current_process_context);
+					ll_append(system.scheduler_desc[cpuId]->scheduler_queue[queue_index],current_process_context);
 				}
 				else if (current_process_context->proc_status==SLEEPING)
 				{
@@ -106,7 +113,7 @@ void schedule(struct t_process_context *current_process_context,struct t_process
 				}
 				else if (current_process_context->proc_status==EXITING)
 				{
-					new_process_context=system.process_info->current_process[get_current_process_context()]->val;	
+					new_process_context=system.process_info->current_process[cpuId]->val;	
 					kfree(current_process_context);
 					ll_delete_node(node);
 				}
@@ -232,7 +239,9 @@ void _sleep_and_unlock(t_spinlock_desc* lock)
 	//system.int_path_count = 0;
 	//printk("2");
 //	INT WILL BE DISABLED UNTIL SYSCALL HANDLER EXIT
-	SUSPEND
+	//SUSPEND
+	asm("movq $0x65,%rax;");
+	asm("int $0x80":::"%rax","%rcx");
 	RESTORE_IF_STATUS
 }
 
@@ -240,16 +249,18 @@ void _awake(struct t_process_context *new_process)
 {
 	t_llist_node* new_node;
 	struct t_process_context* process_context;
+	int cpuId;
 
 	SAVE_IF_STATUS
 	CLI
 	CURRENT_PROCESS_CONTEXT(process_context);
+	cpuId = get_current_process_context();
 	new_process->sleep_time=(system.time-new_process->sleep_time>=1000) ? 1000 : (system.time-new_process->sleep_time);
 	adjust_sched_queue(new_process);
 	//COULD ARRIVE AN ATA INTERRUPT DURING NETWORK FLUSH
 	if (process_context->pid != new_process->pid && new_process->proc_status == SLEEPING)
 	{
-		ll_prepend(system.scheduler_desc->scheduler_queue[new_process->curr_sched_queue_index],new_process);
+		ll_prepend(system.scheduler_desc[cpuId]->scheduler_queue[new_process->curr_sched_queue_index],new_process);
 	}
 	new_process->proc_status=RUNNING;
 	system.force_scheduling = 1;
@@ -258,15 +269,17 @@ void _awake(struct t_process_context *new_process)
 
 void _pause()
 {
-	struct t_process_context* current_process;
-	t_llist* pause_queue;
+	struct t_process_context* current_process = NULL;
+	t_llist* pause_queue = NULL;
+	int cpuId;
 
 	SAVE_IF_STATUS
 	CLI
-	current_process = system.process_info->current_process[get_current_process_context()]->val;
+	cpuId = get_current_process_context();
+	current_process = system.process_info->current_process[cpuId]->val;
 	if (current_process->sig_num != SIGCHLD)
 	{
-		pause_queue = system.process_info->pause_queue;
+		pause_queue = system.process_info->pause_queue[cpuId];
 		ll_prepend(pause_queue,current_process);	
 		_sleep();
 		if (current_process->sig_num == SIGCHLD)
@@ -355,6 +368,13 @@ void _exit(int status)
 	RESTORE_IF_STATUS
 }
 
+//At the moment very stupid round robin algorithm with process_0 assigned to BSP. 
+int static selectCpu()
+{
+  int static nextCpu = 0;
+  return nextCpu++;
+}
+
 int _fork(struct t_processor_reg processor_reg) 
 {
 	int i = 0;
@@ -365,6 +385,7 @@ int _fork(struct t_processor_reg processor_reg)
 	t_hashtable* child_socket_desc = NULL;
 	char* kernel_stack_addr = NULL;
 	t_elf_desc* child_elf_desc = NULL;
+	int cpuId;
 
 	child_process_context = kmalloc(sizeof(struct t_process_context));
 	SAVE_IF_STATUS
@@ -372,8 +393,9 @@ int _fork(struct t_processor_reg processor_reg)
 	CURRENT_PROCESS_CONTEXT(parent_process_context);
 	if (parent_process_context->pid == 0)
 	{
-		system.process_info->process_0 = system.process_info->current_process;
+		system.process_info->process_0 = system.process_info->current_process[get_current_process_context()];
 	}
+	
 	kmemcpy(child_process_context,parent_process_context,sizeof(struct t_process_context));
 	child_process_context->processor_reg = processor_reg;
 	kernel_stack_addr = buddy_alloc_page(system.buddy_desc,KERNEL_STACK_SIZE);
@@ -409,7 +431,8 @@ int _fork(struct t_processor_reg processor_reg)
 		child_process_context->ustack_mem_reg = create_mem_reg(parent_process_context->ustack_mem_reg->start_addr,
 								     parent_process_context->ustack_mem_reg->end_addr);	
 	}
-	ll_prepend(system.scheduler_desc->scheduler_queue[parent_process_context->curr_sched_queue_index],child_process_context);
+	cpuId = selectCpu();
+	ll_prepend(system.scheduler_desc[cpuId]->scheduler_queue[parent_process_context->curr_sched_queue_index],child_process_context);
 	child_process_context->page_pml4 = clone_vm_process(parent_process_context->page_pml4,
 							 parent_process_context->process_type,
 							 FROM_VIRT_TO_PHY(kernel_stack_addr));
@@ -438,7 +461,7 @@ u32 _exec(char* path,char* argv[])
 	u32 process_size;
 	t_elf_desc* elf_desc;
 	u64 phy_page_addr;
-	
+		
 	CURRENT_PROCESS_CONTEXT(current_process_context);
 	if (current_process_context->elf_desc == NULL)
 	{

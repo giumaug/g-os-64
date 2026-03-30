@@ -22,7 +22,10 @@ void init_console(t_console_desc* console_desc,
 	console_desc->write_char = f;
 	console_desc->update_cursor = g;
 	console_desc->first_char = 1;
-	console_desc->sleeping_process = NULL;
+	for (i = 0; i < NUM_CPU; i++)
+	{
+	  console_desc->sleeping_process[i] = NULL;
+	}
 	console_desc->is_empty = 1;
 	return;
 }
@@ -36,10 +39,12 @@ void free_console(t_console_desc *console_desc)
 char _read_char(t_console_desc *console_desc)
 {
 	char data = NULL;
+	int cpuId;
 
+    cpuId = get_current_process_context();
 	while (!(data = read_buf())) 
 	{
-		system.active_console_desc->sleeping_process=system.process_info->current_process[get_current_process_context()]->val;
+		system.active_console_desc->sleeping_process[cpuId]=system.process_info->current_process[cpuId]->val;
 		_sleep();
 	}	
 	return data;	

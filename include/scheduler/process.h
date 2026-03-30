@@ -117,8 +117,8 @@ struct t_process_info
 	unsigned int next_pid;
 	//struct t_tss tss;
 	struct t_tss tss[NUM_CPU];
-	t_llist* pause_queue;
-	t_llist* sleep_wait_queue;
+	t_llist* pause_queue[NUM_CPU];
+	t_llist* sleep_wait_queue[NUM_CPU];
 	//struct t_processor_reg current_processor_reg;
 	//struct t_processor_reg current_processor_reg[NUM_CPU];
 	t_hashtable* pid_hash;
