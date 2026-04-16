@@ -58,9 +58,9 @@ int _bind(int sockfd,u32 src_ip,u32 src_port,u32 dst_ip,u16 dst_port)
 		{
 			if (hashtable_get(system.network_desc->udp_desc->conn_map,src_port) == NULL)
 			{
-				SPINLOCK_LOCK(system.network_desc->udp_desc->lock);
+				SPINLOCK_LOCK(system.network_desc->udp_desc->lock,get_current_process_context());
 				hashtable_put(system.network_desc->udp_desc->conn_map,src_port,socket);
-				SPINLOCK_UNLOCK(system.network_desc->udp_desc->lock);
+				SPINLOCK_UNLOCK(system.network_desc->udp_desc->lock,get_current_process_context());
 				ret = 0;
 			}
 			udp_conn_desc = udp_conn_desc_init();
@@ -196,9 +196,9 @@ int _sendto(int sockfd,u32 dst_ip,u16 dst_port,void* data,u32 data_len)
 				udp_conn_desc->dst_ip = dst_ip;
 				udp_conn_desc->dst_port = dst_port;
 				socket->udp_conn_desc = udp_conn_desc;
-				SPINLOCK_LOCK(system.network_desc->udp_desc->lock);
+				SPINLOCK_LOCK(system.network_desc->udp_desc->lock,get_current_process_context());
 				hashtable_put(system.network_desc->udp_desc->conn_map,udp_conn_desc->src_port,socket);
-				SPINLOCK_UNLOCK(system.network_desc->udp_desc->lock);
+				SPINLOCK_UNLOCK(system.network_desc->udp_desc->lock,get_current_process_context());
 			}
 			ret = send_packet_udp(system.network_desc->ip,dst_ip,socket->udp_conn_desc->src_port,dst_port,data,data_len);
 		}

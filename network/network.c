@@ -72,14 +72,14 @@ void equeue_packet(t_network_desc* network_desc)
 		//data_sckt_buf=dequeue_sckt(sckt_buf_desc);
 		if (data_sckt_buf != NULL)
 		{
-			DISABLE_PREEMPTION
+			DISABLE_PREEMPTION(get_current_process_context())
 			STI
 			frame=data_sckt_buf->mac_hdr;
 			frame_len=data_sckt_buf->data_len;
 			send_packet_i8254x(network_desc->dev,frame,frame_len);
 			free_sckt(data_sckt_buf);
 			CLI
-			ENABLE_PREEMPTION
+			ENABLE_PREEMPTION(get_current_process_context())
 		}
 	}
 //	RESTORE_IF_STATUS
@@ -104,11 +104,11 @@ void dequeue_packet(t_network_desc* network_desc)
 	{
 		if (data_sckt_buf != NULL)
 		{
-			DISABLE_PREEMPTION
+			DISABLE_PREEMPTION(get_current_process_context())
 			STI
 			rcv_packet_mac(data_sckt_buf);
 			CLI
-			ENABLE_PREEMPTION
+			ENABLE_PREEMPTION(get_current_process_context())
 		}
 	}
 //	RESTORE_IF_STATUS

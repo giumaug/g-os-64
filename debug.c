@@ -76,16 +76,13 @@ void _check_process_context_2(int val)
 	struct t_process_context* process_context;
 	int index=0;
 	int count = 0;
+	int cpuId;
 
-//	if (system.ops == 0 )
-//	{
-//		return;
-//	}
-
+    cpuId = get_current_process_context();
 	while(index<10)
 	{
-		sentinel_node=ll_sentinel(system.scheduler_desc->scheduler_queue[index]);
-		next=ll_first(system.scheduler_desc->scheduler_queue[index]);
+		sentinel_node=ll_sentinel(system.scheduler_desc[cpuId]->scheduler_queue[index]);
+		next=ll_first(system.scheduler_desc[cpuId]->scheduler_queue[index]);
 		while(next!=sentinel_node)
 		{
 			process_context=next->val;
@@ -111,11 +108,13 @@ void __check_process_context(int val)
 	struct t_process_context* process_context;
 	int index=0;
 	int count = 0;
+	int cpuId;
 
+    cpuId = get_current_process_context();
 	while(index<10)
 	{
-		sentinel_node=ll_sentinel(system.scheduler_desc->scheduler_queue[index]);
-		next=ll_first(system.scheduler_desc->scheduler_queue[index]);
+		sentinel_node=ll_sentinel(system.scheduler_desc[cpuId]->scheduler_queue[index]);
+		next=ll_first(system.scheduler_desc[cpuId]->scheduler_queue[index]);
 		while(next!=sentinel_node)
 		{
 			process_context=next->val;

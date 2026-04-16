@@ -47,7 +47,12 @@ void kmain(multiboot_info_t* mbd, u64 magic)
  	CLI
 	system.force_scheduling = 0;
 	system.process_info = &process_info;
-	system.int_path_count = 0;
+	
+	for (i = 0; i < NUM_CPU; i++)
+	{
+		system.int_path_count[i] = 0;
+	}
+	
 	//system.scheduler_desc->scheduler_queue[0] = 0;
 	relocate_init_code();
 	init_idt();

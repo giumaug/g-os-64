@@ -181,11 +181,10 @@
 				     ");
 
 #define HALT asm("sti;hlt");
-//#define SWITCH_PAGE_DIR(page_dir) asm("mov $0xe00000,%rax;mov %rax,%cr3;");
 #define SWITCH_PAGE_DIR(page_dir) asm("mov %0,%%rax;mov %%rax,%%cr3;"::"r"(page_dir):"%rax");
-//#define SWITCH_PAGE_DIR(page_dir) asm("mov %0,%%rax;"::"r"(page_dir):"%rax");
 #define SYSCALL(syscall_num,params) asm("mov %0,%%rax;mov %1,%%rcx;int $0x80"::"r"(syscall_num),"r"(params):"%rax","%rcx");
-#define SUSPEND asm("movq $0x65,%%rax;int $0x80":::"%rax","%rcx");
+//#define SUSPEND asm("movq $0x65,%%rax;int $0x80":::"%rax","%rcx");
+#define SUSPEND(params) asm("movq $0x65,%%rax;movq %0, %%rcx;int $0x80" : "=r"(params):: "%rax","%rcx");
 #define DO_STACK_FRAME(esp) asm("movq %0,%%rsp;"::"r"(esp));
 
 unsigned char in(unsigned int address);

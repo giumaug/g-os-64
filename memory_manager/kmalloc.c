@@ -13,12 +13,14 @@ extern unsigned int allocated_block;
 t_a_fixed_size_desc a_fixed_size_desc[POOL_NUM];
 unsigned int free_mem_list[POOL_NUM];
 t_hashtable* aligned_address_map = NULL;
+t_spinlock_desc mp_lock;
 
 void init_kmallocs() 
 {
 	unsigned int i;
 	void* mem_addr = NULL;
 	
+	SPINLOCK_INIT(mp_lock);
 	mem_addr = ((FROM_PHY_TO_VIRT((POOL_START_ADDR))) - (MEM_TO_POOL));
 	//ALLOCATED POOL OF 4 8 16 32 64 128 256 512 1024 2048 4096 8192 16384 32768 65536 131072 BYTE
 	for (i = 0; i < POOL_NUM; i++)
@@ -56,6 +58,7 @@ void* _kmalloc(unsigned int mem_size)
 
 	SAVE_IF_STATUS
 	CLI
+	SPINLOCK_LOCK(mp_lock,get_current_process_context());
 	switch(mem_size)
 	{
 		case 0 ... 4:
@@ -144,6 +147,7 @@ void* _kmalloc(unsigned int mem_size)
 		}
 	}
 //	collect_mem_alloc(mem_add);
+    SPINLOCK_UNLOCK(mp_lock,get_current_process_context());
 	RESTORE_IF_STATUS
 	return mem_add;
 }
@@ -156,7 +160,8 @@ void* kmalloc(unsigned int mem_size)
 	static int ss = 0;
 
 	SAVE_IF_STATUS
-	CLI	
+	CLI
+	SPINLOCK_LOCK(mp_lock,get_current_process_context());
 	for (i=0;i<POOL_NUM;i++)
 	{
 		if (mem_size<=pow2(2+i)) break;
@@ -174,6 +179,7 @@ void* kmalloc(unsigned int mem_size)
 //	{
 //		collect_mem_alloc(mem_add);
 //	}
+    SPINLOCK_UNLOCK(mp_lock,get_current_process_context());
 	RESTORE_IF_STATUS
 	return mem_add;
 }
@@ -185,7 +191,8 @@ void _kfree(void *address)
 	u64 pool_offset;
 
 	SAVE_IF_STATUS
-	CLI	  
+	CLI
+	SPINLOCK_LOCK(mp_lock,get_current_process_context());
 	pool_index=0;
 	pool_offset = address - VIRT_MEM_START_ADDR - POOL_START_ADDR;
 	
@@ -276,6 +283,7 @@ void _kfree(void *address)
 			panic();
 		}
 	}
+	SPINLOCK_UNLOCK(mp_lock,get_current_process_context());
 	RESTORE_IF_STATUS
 }
 
@@ -284,7 +292,8 @@ void kfree(void* address)
 	unsigned int pool_index;
 
 	SAVE_IF_STATUS
-	CLI	  
+	CLI
+	SPINLOCK_LOCK(mp_lock,get_current_process_context());
 	pool_index=0;
 	
 	while ((pool_index + 1) * MEM_TO_POOL < (address - VIRT_MEM_START_ADDR + PHY_MEM_START_ADDR - POOL_START_ADDR))
@@ -299,6 +308,7 @@ void kfree(void* address)
 //	{
 //		collect_mem_free(address);
 //	}
+    SPINLOCK_UNLOCK(mp_lock,get_current_process_context());
 	RESTORE_IF_STATUS
 }
 

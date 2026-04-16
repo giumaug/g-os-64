@@ -11,34 +11,45 @@
 #define K_STACK 0x1FFFFB
 
 #define SELECT_FS(ext2) if (system.device_desc->num == 0)        \
-			{                                        \
-				ext2 = system.root_fs;           \
-			}                                        \
-			else                                     \
-			{                                        \
-				ext2 = system.scnd_fs;           \
-			}                                        \
+			{                                                    \
+				ext2 = system.root_fs;                           \
+			}                                                    \
+			else                                                 \
+			{                                                    \
+				ext2 = system.scnd_fs;                           \
+			}                                                    \
+
+void syscall_post_handler(t_spinlock_desc* lock)
+{
+	int cpuIndex;
+	
+	cpuIndex = get_current_process_context(); 
+	if (lock != NULL)
+	{
+		SPINLOCK_UNLOCK(*lock,cpuIndex);
+		ENABLE_PREEMPTION(cpuIndex)
+	}	
+}
 
 void syscall_handler()
 {
 	static int free_vm_proc;        
-	int syscall_num;
+	static int syscall_num;
 	unsigned int mem_size;
 	struct t_process_context* current_process_context;
 	struct t_processor_reg processor_reg;
-	u64* params;
+	u64* params = NULL;
 	char data;
 	unsigned int on_exit_action;
 	u8 flush_network;
-	t_ext2* ext2;
-
+	t_ext2* ext2 = NULL;
+	t_post_handler post_handler;
+	
  	SAVE_PROCESSOR_REG
-	//CLI
 	//call can come from kernel mode (sleep)
 	SWITCH_SS_TO_KERNEL_MODE
 	syscall_num=processor_reg.rax;
 	on_exit_action=0;
-	//current_process_context=system.process_info->current_process->val;
 	current_process_context=system.process_info->current_process[get_current_process_context()]->val;
 	
 	t_console_desc *console_desc=current_process_context->console_desc;
@@ -50,10 +61,6 @@ void syscall_handler()
 	{
 		case 1:
 		params[0]=_fork(processor_reg);
-		if (params[0] == 9999) 
-        {
-			printk("ss");
-		}
 		break;
 	
 		case 2:
@@ -233,6 +240,8 @@ void syscall_handler()
 		
 		case 101: 
 		on_exit_action=1;
+		post_handler.exec = &syscall_post_handler;
+		post_handler.arg = params[0];
 		break;
 	
 		case 106:
@@ -268,16 +277,18 @@ void syscall_handler()
 	{
 		system.flush_network = 1;
 	}
-	//EXIT_INT_HANDLER(on_exit_action,processor_reg)
 
+	//EXIT_INT_HANDLER(on_exit_action,processor_reg, post_handler.exec)
 	static struct t_process_context _current_process_context;                                                  	
 	static struct t_process_context _old_process_context;                                                      	
 	static struct t_process_context _new_process_context;	                                                        
 	static struct t_processor_reg _processor_reg;                                                          
 	static unsigned int _action2; 
-	static u8 stop = 0;                                                                            
+	static u8 stop = 0;     
+	static int cpuIndex;                                                                      
                                                                                                                      
-	CLI                                                                                                             
+	CLI        
+	cpuIndex = get_current_process_context();                                                                                                
 	if (system.int_path_count == 0 && system.force_scheduling == 0 && system.flush_network == 1)                    
 	{                                                                                                               
         system.flush_network = 0;                                                                       
@@ -286,8 +297,7 @@ void syscall_handler()
 		system.flush_network = 1;                                                                       
 	}                                                                                                               
 	_action2=on_exit_action;                                                                                      
-	//_current_process_context=*(struct t_process_context*)system.process_info->current_process->val;
-	_current_process_context=*(struct t_process_context*)system.process_info->current_process[get_current_process_context()]->val;            
+	_current_process_context=*(struct t_process_context*)system.process_info->current_process[cpuIndex]->val;            
 	_old_process_context=_current_process_context;                                                                  
 	_processor_reg=processor_reg;                                                                                   
 	if (system.force_scheduling == 1 && 0 == 0 && system.int_path_count == 0)                                  
@@ -304,8 +314,7 @@ void syscall_handler()
 		while(!stop)                                                                                             
 		{                                                                                                       
 			schedule(&_current_process_context,&_processor_reg);                                            
-			//_new_process_context = *(struct t_process_context*) system.process_info->current_process->val;
-			_new_process_context = *(struct t_process_context*) system.process_info->current_process[get_current_process_context()]->val;
+			_new_process_context = *(struct t_process_context*) system.process_info->current_process[cpuIndex]->val;
 			if (_new_process_context.sig_num == SIGINT)                                                    
 			{                                                                                            
 				_exit(0);
@@ -329,7 +338,16 @@ void syscall_handler()
 			DO_STACK_FRAME(_processor_reg.rsp-8);                                                           
 			free_vm_process(&_old_process_context);                                                         
 			buddy_free_page(system.buddy_desc,FROM_PHY_TO_VIRT(_old_process_context.phy_kernel_stack));     
-		}                                                                                                       
+		}
+		if (syscall_num == 101)
+		{
+			t_spinlock_desc* lock = params[0];
+			if (lock != NULL)
+			{
+				SPINLOCK_UNLOCK(*lock,cpuIndex);
+				ENABLE_PREEMPTION(cpuIndex)
+			}	
+		}                                                                                                      
 		RESTORE_PROCESSOR_REG                                                                                   
 		EXIT_SYSCALL_HANDLER                                                                                    
 	}                                                                                                          	

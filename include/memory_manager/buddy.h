@@ -16,6 +16,7 @@ struct s_buddy_desc
 	short count[BUDDY_MEM_SIZE/PAGE_SIZE];
 	unsigned int free_mem_list[11];
 	t_hashtable* page_desc;
+	t_spinlock_desc mp_lock;
 }
 typedef t_buddy_desc;
 

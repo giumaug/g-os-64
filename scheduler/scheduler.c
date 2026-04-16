@@ -220,29 +220,32 @@ void _sleep()
 	_sleep_and_unlock(NULL);
 }
 
+//PARTIRE DA QUI!!!!!!!!!!!!!!!!!!!!!!!!
 void _sleep_and_unlock(t_spinlock_desc* lock)
 {
-	t_spinlock_desc aa;
+	u64 params[1];
+	int cpuIndex;
 	struct t_process_context* current_process;
-	SAVE_IF_STATUS
-	CLI     
-	current_process=system.process_info->current_process[get_current_process_context()]->val;
+	
+	cpuIndex = get_current_process_context();
+	//SAVE_IF_STATUS
+	//CLI     
+	DISABLE_PREEMPTION(cpuIndex)
+	current_process=system.process_info->current_process[cpuIndex]->val;
 	current_process->sleep_time=system.time;
-	t_llist_node* current_node=system.process_info->current_process;
-	int xxx = current_process->proc_status;
 	current_process->proc_status=SLEEPING;
 	if (lock!=NULL)
 	{
-		SPINLOCK_UNLOCK(*lock);
+		params[0] = lock;
 	}
-	//Preemption has to be re-enabled OKKIO!!!!!!!!!
-	//system.int_path_count = 0;
-	//printk("2");
-//	INT WILL BE DISABLED UNTIL SYSCALL HANDLER EXIT
-	//SUSPEND
-	asm("movq $0x65,%rax;");
-	asm("int $0x80":::"%rax","%rcx");
-	RESTORE_IF_STATUS
+	else
+	{
+		params[0] = NULL;
+	}
+	SUSPEND(params);
+	//Preemption is enabled at the syscall's end.
+	//ENABLE_PREEMPTION(cpuIndex)
+	//RESTORE_IF_STATUS
 }
 
 void _awake(struct t_process_context *new_process)

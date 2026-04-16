@@ -106,32 +106,49 @@ void int_handler_ahci()
 
 	SAVE_PROCESSOR_REG
 //	SWITCH_DS_TO_KERNEL_MODE
-	DISABLE_PREEMPTION
+	DISABLE_PREEMPTION(get_current_process_context())
 	mask_entry(17);
 	EOI_TO_LAPIC
 	STI
 	CURRENT_PROCESS_CONTEXT(current_process_context);
-	
 	io_request = system.device_desc->serving_request;
-	process_context = io_request->process_context;
-
-	if (system.device_desc->status == DEVICE_BUSY)
+	//Could there be spurious interrupts
+	if (io_request != NULL)
 	{
-		sem_up(&system.device_desc->sem);
+		process_context = io_request->process_context;
+		if (system.device_desc->status == DEVICE_BUSY)
+		{
+			sem_up(&system.device_desc->sem);
+		}
+		if (current_process_context->pid != process_context->pid) 
+		{
+			system.force_scheduling = 1;
+		}
+	
+		port = ((t_ahci_device_desc*) system.device_desc->dev)->active_port;
+		port->is = 1;
+		ahci_device_desc = system.device_desc->dev;
+		ahci_device_desc->mem->is = 1;
+	
+		unmask_entry(17);
+		ENABLE_PREEMPTION(get_current_process_context())
+		EXIT_INT_HANDLER(0,processor_reg)
 	}
-	if (current_process_context->pid != process_context->pid) 
+	else
 	{
-	 	system.force_scheduling = 1;
+		port = ((t_ahci_device_desc*) system.device_desc->dev)->active_port;
+		port->is = 1;
+		ahci_device_desc = system.device_desc->dev;
+		ahci_device_desc->mem->is = 1;
+		
+		static struct t_processor_reg _processor_reg;
+		_processor_reg = processor_reg;
+		unmask_entry(17);
+		ENABLE_PREEMPTION(get_current_process_context())
+		
+		RESTORE_PROCESSOR_REG                                                                           
+		RET_FROM_INT_HANDLER 
 	}
-	
-	port = ((t_ahci_device_desc*) system.device_desc->dev)->active_port;
-	port->is = 1;
-	ahci_device_desc = system.device_desc->dev;
-	ahci_device_desc->mem->is = 1;
-	
-	unmask_entry(17);
-	ENABLE_PREEMPTION
-	EXIT_INT_HANDLER(0,processor_reg)
 }
 
 static s8 __read_write_28_ahci(t_io_request* io_request)
@@ -202,7 +219,7 @@ static s8 _p_read_write_28_ahci(t_io_request* io_request)
 	
 	SPINLOCK_INIT(spinlock);
 	//Entrypoint mutual exclusion region.
-	SPINLOCK_LOCK(spinlock);
+	SPINLOCK_LOCK(spinlock,get_current_process_context());
 	device_desc = io_request->device_desc;
 	device_desc->status = DEVICE_BUSY || POOLING_MODE;
     port = ((t_ahci_device_desc*) device_desc->dev)->active_port;
@@ -230,7 +247,7 @@ static s8 _p_read_write_28_ahci(t_io_request* io_request)
 EXIT:
 	device_desc->status = DEVICE_IDLE;
 	//Exitpoint mutual exclusion region
-	SPINLOCK_UNLOCK(spinlock);
+	SPINLOCK_UNLOCK(spinlock,get_current_process_context());
 	return ret;
 }
 
@@ -240,6 +257,9 @@ static u8 _read_write_28_ahci(t_io_request* io_request)
 	t_hba_port* port = NULL;
 	t_device_desc* device_desc = NULL;
 	
+	struct t_process_context* process_context = NULL;
+    CURRENT_PROCESS_CONTEXT(process_context);
+	
 	device_desc = io_request->device_desc;
 	//Entrypoint mutual exclusion region.
 	//Here all requestes are enqueued using semaphore internal queue.
@@ -247,6 +267,7 @@ static u8 _read_write_28_ahci(t_io_request* io_request)
 	//is to use an external queue with multilevel priority slots.
 	sem_down(&device_desc->mutex);
 	device_desc->status = DEVICE_BUSY;
+	device_desc->serving_request=io_request;
     port = ((t_ahci_device_desc*) device_desc->dev)->active_port;
 	ret = __read_write_28_ahci(io_request);
 	
@@ -354,7 +375,7 @@ static void port_init(t_ahci_device_desc* device_desc_ahci, u8 port_num)
         hashtable_put(device_desc_ahci->mem_map, algnd_addr, addr);
     }
     port->ie = 1;
-    start_cmd(port);   
+    start_cmd(port);
 }
 
 static void port_free(t_hba_port* port, t_hashtable* mem_map)

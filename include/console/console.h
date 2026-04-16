@@ -25,7 +25,7 @@ typedef struct s_console_desc
 	void (*update_cursor)(u32 index);
 	unsigned int video_buf_index;
 	unsigned int first_char;
-	struct t_process_context* sleeping_process;
+	struct t_process_context* sleeping_process[NUM_CPU];
 	unsigned int is_empty;
 	t_spinlock_desc spinlock;
 	u32 fg_pgid;

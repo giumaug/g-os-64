@@ -47,7 +47,7 @@ typedef struct s_system
 	struct s_ext2* root_fs;
 	struct s_ext2* scnd_fs;
 	struct s_device_desc* device_desc;
-	unsigned int int_path_count;
+	unsigned int int_path_count[NUM_CPU];
 	struct s_network_desc* network_desc;
 	unsigned int panic;
 	t_llist* timer_list;
