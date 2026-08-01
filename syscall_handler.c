@@ -3,10 +3,10 @@
 #include "scheduler/scheduler.h"
 #include "virtual_memory/vm.h"
 #include "syscall_handler.h"
+#include "drivers/ioapic/ioapic.h"
 #include "debug.h"
 #include "ext2/ext2.h"
 #include "system.h"
-
 
 #define K_STACK 0x1FFFFB
 
@@ -45,7 +45,7 @@ void syscall_handler()
 	t_ext2* ext2 = NULL;
 	t_post_handler post_handler;
 	
- 	SAVE_PROCESSOR_REG
+ 	SAVE_PROCESSOR_REG(processor_reg)
 	//call can come from kernel mode (sleep)
 	SWITCH_SS_TO_KERNEL_MODE
 	syscall_num=processor_reg.rax;
@@ -240,8 +240,8 @@ void syscall_handler()
 		
 		case 101: 
 		on_exit_action=1;
-		post_handler.exec = &syscall_post_handler;
-		post_handler.arg = params[0];
+		//post_handler.exec = &syscall_post_handler;
+		//post_handler.arg = params[0];
 		break;
 	
 		case 106:
@@ -277,83 +277,6 @@ void syscall_handler()
 	{
 		system.flush_network = 1;
 	}
-
-	//EXIT_INT_HANDLER(on_exit_action,processor_reg, post_handler.exec)
-	static struct t_process_context _current_process_context;                                                  	
-	static struct t_process_context _old_process_context;                                                      	
-	static struct t_process_context _new_process_context;	                                                        
-	static struct t_processor_reg _processor_reg;                                                          
-	static unsigned int _action2; 
-	static u8 stop = 0;     
-	static int cpuIndex;                                                                      
-                                                                                                                     
-	CLI        
-	cpuIndex = get_current_process_context();                                                                                                
-	if (system.int_path_count == 0 && system.force_scheduling == 0 && system.flush_network == 1)                    
-	{                                                                                                               
-        system.flush_network = 0;                                                                       
-		dequeue_packet(system.network_desc);                                                            
-		equeue_packet(system.network_desc);                                                             
-		system.flush_network = 1;                                                                       
-	}                                                                                                               
-	_action2=on_exit_action;                                                                                      
-	_current_process_context=*(struct t_process_context*)system.process_info->current_process[cpuIndex]->val;            
-	_old_process_context=_current_process_context;                                                                  
-	_processor_reg=processor_reg;                                                                                   
-	if (system.force_scheduling == 1 && 0 == 0 && system.int_path_count == 0)                                  
-	{                                                                                                               
-		_action2 = 1;                                                                                           
-		if (_current_process_context.proc_status == EXITING)                                                    
-		{                                                                                                       
-			_action2 = 2;                                                                                   
-		}                                                                                                       
-	}                                                                                                                                                                                                                          
-	if (_action2>0)                                                                                                 
-	{	system.force_scheduling = 0;
-		stop = 0;                                                                            
-		while(!stop)                                                                                             
-		{                                                                                                       
-			schedule(&_current_process_context,&_processor_reg);                                            
-			_new_process_context = *(struct t_process_context*) system.process_info->current_process[cpuIndex]->val;
-			if (_new_process_context.sig_num == SIGINT)                                                    
-			{                                                                                            
-				_exit(0);
-				free_vm_process(&_new_process_context);                                                         
-				buddy_free_page(system.buddy_desc,FROM_PHY_TO_VIRT(_new_process_context.phy_kernel_stack));           
-			}                                                                                               
-			else                                                                                            
-			{                                                                                               
-				stop = 1;                                                                               
-			}                                                                                               
-		}     
-		if (_new_process_context.pid != _old_process_context.pid)                                               
-		{                                                                                                       
-				_processor_reg=_new_process_context.processor_reg;                                      
-		}                                                                                                       
-		SWITCH_PAGE_DIR(FROM_VIRT_TO_PHY(_new_process_context.page_pml4))                       
-		DO_STACK_FRAME(_processor_reg.rsp-8);                                                                   
-                                                                                                                        
-		if (_action2==2)                                                                                        
-		{                                                                                                       
-			DO_STACK_FRAME(_processor_reg.rsp-8);                                                           
-			free_vm_process(&_old_process_context);                                                         
-			buddy_free_page(system.buddy_desc,FROM_PHY_TO_VIRT(_old_process_context.phy_kernel_stack));     
-		}
-		if (syscall_num == 101)
-		{
-			t_spinlock_desc* lock = params[0];
-			if (lock != NULL)
-			{
-				SPINLOCK_UNLOCK(*lock,cpuIndex);
-				ENABLE_PREEMPTION(cpuIndex)
-			}	
-		}                                                                                                      
-		RESTORE_PROCESSOR_REG                                                                                   
-		EXIT_SYSCALL_HANDLER                                                                                    
-	}                                                                                                          	
-	else                                                                                                       	
-	{                                                                                                               
-		RESTORE_PROCESSOR_REG                                                                           
-		RET_FROM_INT_HANDLER                                                                                    
-	}
+	exit_int_handler(processor_reg, on_exit_action, params);
+    //EXIT_INT_HANDLER(on_exit_action,processor_reg, post_handler.exec)
 }

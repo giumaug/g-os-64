@@ -231,7 +231,7 @@ void int_handler_i8254x()
 	u64 phy_data_buffer;
 	struct t_processor_reg processor_reg;
 
-	SAVE_PROCESSOR_REG             
+	SAVE_PROCESSOR_REG(processor_reg)             
 	i8254x = system.network_desc->dev;
 	mask_entry(16);
 	DISABLE_PREEMPTION(get_current_process_context())
@@ -292,7 +292,8 @@ exit:
 	ENABLE_PREEMPTION(get_current_process_context())
 	CLI
 	system.flush_network = 1;
-	EXIT_INT_HANDLER(0,processor_reg)
+	//EXIT_INT_HANDLER(0,processor_reg,NULL)
+	exit_int_handler(processor_reg, 0, NULL);
 }
 
 void send_packet_i8254x(t_i8254x* i8254x,void* frame_addr,u16 frame_len)

@@ -25,10 +25,7 @@ void sem_down(t_sem_desc* sem_desc)
 	struct t_process_context* current_process_context;
 	unsigned int need_sleep=0;
 
-	//SAVE_IF_STATUS	
-	//CLI
-	SPINLOCK_LOCK(sem_desc->spinlock,get_current_process_context());
-	
+	SPINLOCK_LOCK(sem_desc->spinlock,get_current_process_context());	
 	if (sem_desc->count==0)
 	{
 		current_process_context=system.process_info->current_process[get_current_process_context()]->val;
@@ -39,7 +36,6 @@ void sem_down(t_sem_desc* sem_desc)
 	{
 		sem_desc->count--;
 	}
-	
 	if (need_sleep)
 	{
 		_sleep_and_unlock(&(sem_desc->spinlock));
@@ -48,7 +44,6 @@ void sem_down(t_sem_desc* sem_desc)
 	{
 		SPINLOCK_UNLOCK(sem_desc->spinlock,get_current_process_context());
 	}
-	//RESTORE_IF_STATUS
 }
 
 void sem_up(t_sem_desc* sem_desc)
@@ -56,9 +51,7 @@ void sem_up(t_sem_desc* sem_desc)
 	t_llist_node* node;
 	struct t_process_context* new_process_context;
 	
-	SAVE_IF_STATUS	
-	CLI
-
+	SPINLOCK_LOCK(sem_desc->spinlock,get_current_process_context());
 	if (!ll_empty(sem_desc->wait_queue))
 	{
 		node=ll_first(sem_desc->wait_queue);
@@ -70,5 +63,5 @@ void sem_up(t_sem_desc* sem_desc)
 	{
 		sem_desc->count++;
 	}
-	RESTORE_IF_STATUS
+	SPINLOCK_UNLOCK(sem_desc->spinlock,get_current_process_context());
 }

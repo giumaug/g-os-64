@@ -100,11 +100,11 @@ void int_handler_ahci()
 	t_io_request* io_request = NULL;
 	struct t_process_context* process_context = NULL;
 	struct t_process_context* current_process_context = NULL;
-	
 	t_ahci_device_desc* ahci_device_desc = NULL;
 	t_hba_port* port = NULL;
-
-	SAVE_PROCESSOR_REG
+	u64 params[2];
+	
+	SAVE_PROCESSOR_REG(processor_reg)
 //	SWITCH_DS_TO_KERNEL_MODE
 	DISABLE_PREEMPTION(get_current_process_context())
 	mask_entry(17);
@@ -115,24 +115,27 @@ void int_handler_ahci()
 	//Could there be spurious interrupts
 	if (io_request != NULL)
 	{
+		//SPINLOCK_LOCK(system.device_desc->lock, get_current_process_context());
 		process_context = io_request->process_context;
 		if (system.device_desc->status == DEVICE_BUSY)
 		{
-			sem_up(&system.device_desc->sem);
+			system.device_desc->status == DEVICE_IDLE;
+			system.device_desc->serving_request = NULL;
+			_awake(process_context);
 		}
 		if (current_process_context->pid != process_context->pid) 
 		{
 			system.force_scheduling = 1;
 		}
-	
 		port = ((t_ahci_device_desc*) system.device_desc->dev)->active_port;
 		port->is = 1;
 		ahci_device_desc = system.device_desc->dev;
 		ahci_device_desc->mem->is = 1;
-	
 		unmask_entry(17);
 		ENABLE_PREEMPTION(get_current_process_context())
-		EXIT_INT_HANDLER(0,processor_reg)
+		//params[0] = 0;
+	    //params[1] = &system.device_desc->lock;
+		exit_int_handler(processor_reg, 0, NULL);                                                                                              
 	}
 	else
 	{
@@ -146,7 +149,7 @@ void int_handler_ahci()
 		unmask_entry(17);
 		ENABLE_PREEMPTION(get_current_process_context())
 		
-		RESTORE_PROCESSOR_REG                                                                           
+		RESTORE_PROCESSOR_REG(_processor_reg)                                                                           
 		RET_FROM_INT_HANDLER 
 	}
 }
@@ -256,25 +259,25 @@ static u8 _read_write_28_ahci(t_io_request* io_request)
 	s8 ret;
 	t_hba_port* port = NULL;
 	t_device_desc* device_desc = NULL;
+	u64 params[1];
 	
 	struct t_process_context* process_context = NULL;
     CURRENT_PROCESS_CONTEXT(process_context);
-	
 	device_desc = io_request->device_desc;
 	//Entrypoint mutual exclusion region.
 	//Here all requestes are enqueued using semaphore internal queue.
 	//In order to implement a multilevel disk scheduler a better design
 	//is to use an external queue with multilevel priority slots.
 	sem_down(&device_desc->mutex);
+	unmask_entry(17);
 	device_desc->status = DEVICE_BUSY;
 	device_desc->serving_request=io_request;
     port = ((t_ahci_device_desc*) device_desc->dev)->active_port;
 	ret = __read_write_28_ahci(io_request);
-	
-	//semaphore to avoid race with interrupt handler
-	sem_down(&device_desc->sem);
-	device_desc->status = DEVICE_IDLE;
-	//Endpoint mutual exclusion region
+	//spinlock to avoid race with interrupt handler
+	//SPINLOCK_LOCK(device_desc->lock, get_current_process_context());
+	params[0] = 1;
+	SUSPEND(params);
 	sem_up(&device_desc->mutex);
 	return ret;
 }
@@ -401,32 +404,6 @@ static void port_free(t_hba_port* port, t_hashtable* mem_map)
 	addr = hashtable_remove(mem_map, algnd_addr);
 	kfree(addr);
 }
-
-//void test_ahci()
-//{
-//	int i;
-//    char* io_buffer = NULL;
-//    t_io_request* io_request = NULL;
-//    int partition_start_sector = 51400;
-//    
-//    io_buffer = aligned_kmalloc(BLOCK_SIZE, 16);
-//    
-//    for (i = 0; i < 512; i++)
-//	{
-//			io_buffer[i] = 'k';
-//	}
-//    
-//    io_request = kmalloc(sizeof(t_io_request));
-//    io_request->device_desc = system.device_desc;
-//    io_request->sector_count= 1;
-//    //io_request->lba= 2 + partition_start_sector;
-//    io_request->lba= partition_start_sector;
-//    io_request->io_buffer = io_buffer;
-//    io_request->process_context = NULL;
-//    _write_28_ahci(io_request);
-//    kfree(io_request);
-//    aligned_kfree(io_buffer);                                                      					
-//}
 
 static int check_type(t_hba_port* port)
 {

@@ -75,72 +75,6 @@ void* init_virtual_memory()
 	return FROM_PHY_TO_VIRT(((u64)pml4));
 }
 
-//No longer required.
-int __map_vm_mem_static(u64 vir_mem_addr, u64 phy_mem_addr, u64 mem_size)
-{
-	u32 i,j;
-	u32 _pages_index;
-	u32 first_pd,last_pd;
-	u32 first_pt,last_pt; 
-	u32 start_pt,end_pt;
-	u32 page_count,pd_count;
-	u64* page_table = NULL;
-	
-	u64* ptr = FROM_PHY_TO_VIRT(PHY_MASTER_PTR);
-	u64* dir = FROM_PHY_TO_VIRT(PHY_MASTER_DIR);
-	u64* pages = FROM_PHY_TO_VIRT(PHY_MASTER_PAGES);
-	
-	if (vir_mem_addr + mem_size >= 0x40000000)
-	{
-		return -1;
-	}
-	page_count = mem_size / 4096;
-	if ((mem_size % 4096) > 0) page_count++;
-	pd_count = page_count / 512;
-	if ((page_count % 512) > 0) pd_count++;
-	first_pd = (vir_mem_addr & 0x3FFFFFFF)  >> 21;
-	first_pt = (vir_mem_addr & 0x1FFFFF) >> 12;
-	last_pt = ((vir_mem_addr + mem_size - 1) & 0x1FFFFF) >> 12;
-	last_pd = pd_count + first_pd;
-	
-	for (i = first_pd; i < last_pd; i++)
-	{
-		if (dir[i] == 0)
-		{
-			pages_index += PAGE_SIZE;
-			dir[i] = PHY_MASTER_PAGES + pages_index | PAGE_IN_MEMORY | PAGE_WRITE | USER;
-		}
-		page_table = ALIGN_4K(FROM_PHY_TO_VIRT(((u64*) dir)[i]));
-		
-		if (i == first_pd && pd_count > 1) 
-		{
-			start_pt = first_pt;
-			end_pt = 512;
-		}
-		else if (i == first_pd && pd_count == 1) 
-		{
-			start_pt = first_pt;
-			end_pt = last_pt + 1;
-		}
-		else if (i == last_pd - 1)
-		{
-			start_pt = 0;
-			end_pt = last_pt + 1;
-		}
-		else 
-		{
-			start_pt = 0;
-			end_pt = 512;
-		}
-		for (j = start_pt; j < end_pt; j++)
-		{
-			page_table[j] = phy_mem_addr | PAGE_IN_MEMORY | PAGE_WRITE | SUPERUSER;
-			phy_mem_addr += PAGE_SIZE;
-		}
-	}
-	return 0;
-}
-
 void init_vm_process(struct t_process_context* process_context)
 {
 	u32 i,y;
@@ -196,18 +130,7 @@ void* clone_vm_process(void* parent_page_pml4,u64 process_type, u64 kernel_stack
 	buddy_clean_mem(page_ptr);
 	page_pml4[0] = FROM_VIRT_TO_PHY((u64)page_ptr) | 7;
 	
-	//page_dir = buddy_alloc_page(system.buddy_desc,0x1000);
-	//buddy_clean_mem(page_dir);
-	//page_ptr[0] = FROM_VIRT_TO_PHY((u64)page_dir) | 7;
-	
-	//page_table = buddy_alloc_page(system.buddy_desc, 0x1000);
-	//buddy_clean_mem(page_table);
-	//page_dir[0] = FROM_VIRT_TO_PHY((u64)page_table) | 7;
-	
-	parent_page_ptr = ALIGN_4K(FROM_PHY_TO_VIRT(((u64*)parent_page_pml4)[0]));
-	//parent_page_dir = ALIGN_4K(FROM_PHY_TO_VIRT(((u64*)parent_page_ptr)[0]));
-	//parent_page_table = ALIGN_4K(FROM_PHY_TO_VIRT(((u64*)parent_page_dir)[0]));
-		
+	parent_page_ptr = ALIGN_4K(FROM_PHY_TO_VIRT(((u64*)parent_page_pml4)[0]));	
 	map_vm_mem(page_pml4, (KERNEL_STACK-KERNEL_STACK_SIZE), kernel_stack_addr, KERNEL_STACK_SIZE, 3);
 	if (process_type == USERSPACE_PROCESS)
 	{
@@ -569,7 +492,7 @@ void page_fault_handler()
 	u64 phy_fault_addr;
 	u64 phy_page_addr;
 	
-	SAVE_PROCESSOR_REG
+	SAVE_PROCESSOR_REG(processor_reg)
 	SWITCH_SS_TO_KERNEL_MODE
 	GET_FAULT_ADDRESS(fault_addr, fault_code);
 	CURRENT_PROCESS_CONTEXT(current_process_context);
@@ -646,39 +569,6 @@ void page_fault_handler()
 
 	SWITCH_PAGE_DIR(FROM_VIRT_TO_PHY((current_process_context->page_pml4))) 	
 //	EXIT_INT_HANDLER(on_exit_action,processor_reg)
-                    
-	static struct t_process_context _current_process_context;                                                  		
-	static struct t_process_context _old_process_context;                                                      		
-	static struct t_process_context _new_process_context;	                                                   		
-	static struct t_processor_reg _processor_reg;                                                              		
-	static unsigned int _action2;                                                                              		
-                                                                                                                   		
-	CLI                                                                                                        		
-	_action2=on_exit_action;                                                                                           		
-	_current_process_context=*(struct t_process_context*)system.process_info->current_process[get_current_process_context()]->val;             		
-	_old_process_context=_current_process_context;                                                             		
-	_processor_reg=processor_reg;
-	                                                   		
-	if (_action2>0)                                                                                            		
-	{                                                                                                          		
-		schedule(&_current_process_context,&_processor_reg);                                               		
-		_new_process_context=*(struct t_process_context*)system.process_info->current_process[get_current_process_context()]->val;         		
-		_processor_reg=_new_process_context.processor_reg;                                                              
-		SWITCH_PAGE_DIR(FROM_VIRT_TO_PHY((_new_process_context.page_pml4)))                  		
-		DO_STACK_FRAME(_processor_reg.rsp-8);                                                              		
-		if (_action2==2)                                                                                   		
-		{                                                                                                  		
-			DO_STACK_FRAME(_processor_reg.rsp-8);                                                      	
-			free_vm_process(&_old_process_context);                                                 	
-			buddy_free_page(system.buddy_desc,FROM_PHY_TO_VIRT(_old_process_context.phy_kernel_stack)); 						
-		}                                                                                                  		
-		RESTORE_PROCESSOR_REG                                                                           		
-		EXIT_SYSCALL_HANDLER                                                                           		
-	}                                                                                                          		
-	else                                                                                                       		
-	{                                                                                                            		
-		RESTORE_PROCESSOR_REG
-		RET_FROM_INT_HANDLER_FLUSH	                                                                                                		
-	}
+    exit_int_handler(processor_reg, -1, NULL);
 } 
 

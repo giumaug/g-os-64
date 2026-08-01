@@ -5,6 +5,7 @@
 #include "drivers/pic/8259A.h"
 #include "lib/lib.h"
 #include "drivers/lapic/lapic.h"
+#include "drivers/ioapic/ioapic.h"  
 
 struct t_i_desc idt[255];
 struct t_idt_ptr idt_ptr;
@@ -17,730 +18,572 @@ void exception()
 void int_handler_generic() 
 {
 	struct t_processor_reg processor_reg;
-	struct t_processor_reg _processor_reg;
 	
-	SAVE_PROCESSOR_REG
-	//SWITCH_DS_TO_KERNEL_MODE
+	SAVE_PROCESSOR_REG(processor_reg)
 	exception();
-	_processor_reg = processor_reg;
 	EOI_TO_LAPIC
-	RESTORE_PROCESSOR_REG
-	 asm ("movq %0,%%rax;"::"r"(_processor_reg.rax));                                                                                   
+	RESTORE_PROCESSOR_REG(processor_reg)                                                                                 
 	RET_FROM_INT_HANDLER    
 }
 
 void int_handler_generic_0() 
 {
 	struct t_processor_reg processor_reg;
-	struct t_processor_reg _processor_reg;
 	
-	SAVE_PROCESSOR_REG
-	//SWITCH_DS_TO_KERNEL_MODE
+	SAVE_PROCESSOR_REG(processor_reg)
 	exception();
-	_processor_reg = processor_reg;
 	EOI_TO_LAPIC
-	RESTORE_PROCESSOR_REG                                                                                   
+	RESTORE_PROCESSOR_REG(processor_reg)                                                                                 
 	RET_FROM_INT_HANDLER    
 }
-
 
 void int_handler_generic_1() 
 {
 	struct t_processor_reg processor_reg;
-	struct t_processor_reg _processor_reg;
 	
-	SAVE_PROCESSOR_REG
-	//SWITCH_DS_TO_KERNEL_MODE
+	SAVE_PROCESSOR_REG(processor_reg)
 	exception();
-	_processor_reg = processor_reg;
 	EOI_TO_LAPIC
-	RESTORE_PROCESSOR_REG                                                                                   
+	RESTORE_PROCESSOR_REG(processor_reg)                                                                                 
 	RET_FROM_INT_HANDLER    
 }
 
 void int_handler_generic_2() 
 {
 	struct t_processor_reg processor_reg;
-	struct t_processor_reg _processor_reg;
 	
-	SAVE_PROCESSOR_REG
-	//SWITCH_DS_TO_KERNEL_MODE
+	SAVE_PROCESSOR_REG(processor_reg)
 	exception();
-	_processor_reg = processor_reg;
 	EOI_TO_LAPIC
-	RESTORE_PROCESSOR_REG                                                                                   
+	RESTORE_PROCESSOR_REG(processor_reg)                                                                                 
 	RET_FROM_INT_HANDLER    
 }
 
 void int_handler_generic_3() 
 { 
 	struct t_processor_reg processor_reg;
-	struct t_processor_reg _processor_reg;
 	
-	SAVE_PROCESSOR_REG
-	//SWITCH_DS_TO_KERNEL_MODE
+	SAVE_PROCESSOR_REG(processor_reg)
 	exception();
-	_processor_reg = processor_reg;
 	EOI_TO_LAPIC
-	RESTORE_PROCESSOR_REG                                                                                   
+	RESTORE_PROCESSOR_REG(processor_reg)                                                                                 
 	RET_FROM_INT_HANDLER    
 }
 
 void int_handler_generic_4() 
 {
 	struct t_processor_reg processor_reg;
-	struct t_processor_reg _processor_reg;
 	
-	SAVE_PROCESSOR_REG
-	//SWITCH_DS_TO_KERNEL_MODE
+	SAVE_PROCESSOR_REG(processor_reg)
 	exception();
-	_processor_reg = processor_reg;
 	EOI_TO_LAPIC
-	RESTORE_PROCESSOR_REG                                                                                   
-	RET_FROM_INT_HANDLER    
+	RESTORE_PROCESSOR_REG(processor_reg)                                                                                 
+	RET_FROM_INT_HANDLER   
 }
 
 void int_handler_generic_5() 
 {
 	struct t_processor_reg processor_reg;
-	struct t_processor_reg _processor_reg;
 	
-	SAVE_PROCESSOR_REG
-	//SWITCH_DS_TO_KERNEL_MODE
+	SAVE_PROCESSOR_REG(processor_reg)
 	exception();
-	_processor_reg = processor_reg;
 	EOI_TO_LAPIC
-	RESTORE_PROCESSOR_REG                                                                                   
+	RESTORE_PROCESSOR_REG(processor_reg)                                                                                 
 	RET_FROM_INT_HANDLER    
 }
 
 void int_handler_generic_6() 
 {
 	struct t_processor_reg processor_reg;
-	struct t_processor_reg _processor_reg;
 	
-	SAVE_PROCESSOR_REG
-	//SWITCH_DS_TO_KERNEL_MODE
+	SAVE_PROCESSOR_REG(processor_reg)
 	exception();
-	_processor_reg = processor_reg;
 	EOI_TO_LAPIC
-	RESTORE_PROCESSOR_REG                                                                                   
+	RESTORE_PROCESSOR_REG(processor_reg)                                                                                 
 	RET_FROM_INT_HANDLER    
 }
 
 void int_handler_generic_7() 
 {
 	struct t_processor_reg processor_reg;
-	struct t_processor_reg _processor_reg;
 	
-	SAVE_PROCESSOR_REG
-	//SWITCH_DS_TO_KERNEL_MODE
+	SAVE_PROCESSOR_REG(processor_reg)
 	exception();
-	_processor_reg = processor_reg;
 	EOI_TO_LAPIC
-	RESTORE_PROCESSOR_REG                                                                                   
+	RESTORE_PROCESSOR_REG(processor_reg)                                                                                 
 	RET_FROM_INT_HANDLER    
 }
 
 void int_handler_generic_8() 
 {
 	struct t_processor_reg processor_reg;
-	struct t_processor_reg _processor_reg;
 	
-	SAVE_PROCESSOR_REG
-	//SWITCH_DS_TO_KERNEL_MODE
+	SAVE_PROCESSOR_REG(processor_reg)
 	exception();
-	_processor_reg = processor_reg;
 	EOI_TO_LAPIC
-	RESTORE_PROCESSOR_REG                                                                                   
+	RESTORE_PROCESSOR_REG(processor_reg)                                                                                 
 	RET_FROM_INT_HANDLER    
 }
 
 void int_handler_generic_9() 
 {
 	struct t_processor_reg processor_reg;
-	struct t_processor_reg _processor_reg;
 	
-	SAVE_PROCESSOR_REG
-	//SWITCH_DS_TO_KERNEL_MODE
+	SAVE_PROCESSOR_REG(processor_reg)
 	exception();
-	_processor_reg = processor_reg;
 	EOI_TO_LAPIC
-	RESTORE_PROCESSOR_REG                                                                                   
+	RESTORE_PROCESSOR_REG(processor_reg)                                                                                 
 	RET_FROM_INT_HANDLER    
 }
 
 void int_handler_generic_10() 
 {
 	struct t_processor_reg processor_reg;
-	struct t_processor_reg _processor_reg;
 	
-	SAVE_PROCESSOR_REG
-	//SWITCH_DS_TO_KERNEL_MODE
+	SAVE_PROCESSOR_REG(processor_reg)
 	exception();
-	_processor_reg = processor_reg;
 	EOI_TO_LAPIC
-	RESTORE_PROCESSOR_REG                                                                                   
+	RESTORE_PROCESSOR_REG(processor_reg)                                                                                 
 	RET_FROM_INT_HANDLER    
 }
 
 void int_handler_generic_11() 
 {
 	struct t_processor_reg processor_reg;
-	struct t_processor_reg _processor_reg;
 	
-	SAVE_PROCESSOR_REG
-	//SWITCH_DS_TO_KERNEL_MODE
+	SAVE_PROCESSOR_REG(processor_reg)
 	exception();
-	_processor_reg = processor_reg;
 	EOI_TO_LAPIC
-	RESTORE_PROCESSOR_REG                                                                                   
-	RET_FROM_INT_HANDLER    
+	RESTORE_PROCESSOR_REG(processor_reg)                                                                                 
+	RET_FROM_INT_HANDLER   
 }
 
 void int_handler_generic_12() 
 {
 	struct t_processor_reg processor_reg;
-	struct t_processor_reg _processor_reg;
 	
-	SAVE_PROCESSOR_REG
-	//SWITCH_DS_TO_KERNEL_MODE
+	SAVE_PROCESSOR_REG(processor_reg)
 	exception();
-	_processor_reg = processor_reg;
 	EOI_TO_LAPIC
-	RESTORE_PROCESSOR_REG                                                                                   
+	RESTORE_PROCESSOR_REG(processor_reg)                                                                                 
 	RET_FROM_INT_HANDLER    
 }
 
 void int_handler_generic_13() 
 {
 	struct t_processor_reg processor_reg;
-	struct t_processor_reg _processor_reg;
 	
-	SAVE_PROCESSOR_REG
-	//SWITCH_DS_TO_KERNEL_MODE
+	SAVE_PROCESSOR_REG(processor_reg)
 	exception();
-	_processor_reg = processor_reg;
 	EOI_TO_LAPIC
-	RESTORE_PROCESSOR_REG                                                                                   
+	RESTORE_PROCESSOR_REG(processor_reg)                                                                                 
 	RET_FROM_INT_HANDLER    
 }
 
 void int_handler_generic_14() 
 {
 	struct t_processor_reg processor_reg;
-	struct t_processor_reg _processor_reg;
 	
-	SAVE_PROCESSOR_REG
-	//SWITCH_DS_TO_KERNEL_MODE
+	SAVE_PROCESSOR_REG(processor_reg)
 	exception();
-	_processor_reg = processor_reg;
 	EOI_TO_LAPIC
-	RESTORE_PROCESSOR_REG                                                                                   
+	RESTORE_PROCESSOR_REG(processor_reg)                                                                                 
 	RET_FROM_INT_HANDLER    
 }
 
 void int_handler_generic_15() 
 {
 	struct t_processor_reg processor_reg;
-	struct t_processor_reg _processor_reg;
 	
-	SAVE_PROCESSOR_REG
-	//SWITCH_DS_TO_KERNEL_MODE
+	SAVE_PROCESSOR_REG(processor_reg)
 	exception();
-	_processor_reg = processor_reg;
 	EOI_TO_LAPIC
-	RESTORE_PROCESSOR_REG                                                                                   
+	RESTORE_PROCESSOR_REG(processor_reg)                                                                                 
 	RET_FROM_INT_HANDLER    
 }
 
 void int_handler_generic_16() 
 {
 	struct t_processor_reg processor_reg;
-	struct t_processor_reg _processor_reg;
 	
-	SAVE_PROCESSOR_REG
-	//SWITCH_DS_TO_KERNEL_MODE
+	SAVE_PROCESSOR_REG(processor_reg)
 	exception();
-	_processor_reg = processor_reg;
 	EOI_TO_LAPIC
-	RESTORE_PROCESSOR_REG                                                                                   
+	RESTORE_PROCESSOR_REG(processor_reg)                                                                                 
 	RET_FROM_INT_HANDLER    
 }
 
 void int_handler_generic_17() 
 {
 	struct t_processor_reg processor_reg;
-	struct t_processor_reg _processor_reg;
 	
-	SAVE_PROCESSOR_REG
-	//SWITCH_DS_TO_KERNEL_MODE
+	SAVE_PROCESSOR_REG(processor_reg)
 	exception();
-	_processor_reg = processor_reg;
 	EOI_TO_LAPIC
-	RESTORE_PROCESSOR_REG                                                                                   
+	RESTORE_PROCESSOR_REG(processor_reg)                                                                                 
 	RET_FROM_INT_HANDLER    
 }
 
 void int_handler_generic_18() 
 {
 	struct t_processor_reg processor_reg;
-	struct t_processor_reg _processor_reg;
 	
-	SAVE_PROCESSOR_REG
-	//SWITCH_DS_TO_KERNEL_MODE
+	SAVE_PROCESSOR_REG(processor_reg)
 	exception();
-	_processor_reg = processor_reg;
 	EOI_TO_LAPIC
-	RESTORE_PROCESSOR_REG                                                                                   
+	RESTORE_PROCESSOR_REG(processor_reg)                                                                                 
 	RET_FROM_INT_HANDLER    
 }
 
 void int_handler_generic_19() 
 {
 	struct t_processor_reg processor_reg;
-	struct t_processor_reg _processor_reg;
 	
-	SAVE_PROCESSOR_REG
-	//SWITCH_DS_TO_KERNEL_MODE
+	SAVE_PROCESSOR_REG(processor_reg)
 	exception();
-	_processor_reg = processor_reg;
 	EOI_TO_LAPIC
-	RESTORE_PROCESSOR_REG                                                                                   
+	RESTORE_PROCESSOR_REG(processor_reg)                                                                                 
 	RET_FROM_INT_HANDLER    
 }
 
 void int_handler_generic_20() 
 {
 	struct t_processor_reg processor_reg;
-	struct t_processor_reg _processor_reg;
 	
-	SAVE_PROCESSOR_REG
-	//SWITCH_DS_TO_KERNEL_MODE
+	SAVE_PROCESSOR_REG(processor_reg)
 	exception();
-	_processor_reg = processor_reg;
 	EOI_TO_LAPIC
-	RESTORE_PROCESSOR_REG                                                                                   
+	RESTORE_PROCESSOR_REG(processor_reg)                                                                                 
 	RET_FROM_INT_HANDLER    
 }
 
 void int_handler_generic_21() 
 {
 	struct t_processor_reg processor_reg;
-	struct t_processor_reg _processor_reg;
 	
-	SAVE_PROCESSOR_REG
-	//SWITCH_DS_TO_KERNEL_MODE
+	SAVE_PROCESSOR_REG(processor_reg)
 	exception();
-	_processor_reg = processor_reg;
 	EOI_TO_LAPIC
-	RESTORE_PROCESSOR_REG                                                                                   
+	RESTORE_PROCESSOR_REG(processor_reg)                                                                                 
 	RET_FROM_INT_HANDLER    
 }
 
 void int_handler_generic_22() 
 {
 	struct t_processor_reg processor_reg;
-	struct t_processor_reg _processor_reg;
 	
-	SAVE_PROCESSOR_REG
-	//SWITCH_DS_TO_KERNEL_MODE
+	SAVE_PROCESSOR_REG(processor_reg)
 	exception();
-	_processor_reg = processor_reg;
 	EOI_TO_LAPIC
-	RESTORE_PROCESSOR_REG                                                                                   
+	RESTORE_PROCESSOR_REG(processor_reg)                                                                                 
 	RET_FROM_INT_HANDLER    
 }
 
 void int_handler_generic_23() 
 {
 	struct t_processor_reg processor_reg;
-	struct t_processor_reg _processor_reg;
 	
-	SAVE_PROCESSOR_REG
-	//SWITCH_DS_TO_KERNEL_MODE
+	SAVE_PROCESSOR_REG(processor_reg)
 	exception();
-	_processor_reg = processor_reg;
 	EOI_TO_LAPIC
-	RESTORE_PROCESSOR_REG                                                                                   
+	RESTORE_PROCESSOR_REG(processor_reg)                                                                                 
 	RET_FROM_INT_HANDLER    
 }
 
 void int_handler_generic_24() 
 {
 	struct t_processor_reg processor_reg;
-	struct t_processor_reg _processor_reg;
 	
-	SAVE_PROCESSOR_REG
-	//SWITCH_DS_TO_KERNEL_MODE
+	SAVE_PROCESSOR_REG(processor_reg)
 	exception();
-	_processor_reg = processor_reg;
 	EOI_TO_LAPIC
-	RESTORE_PROCESSOR_REG                                                                                   
+	RESTORE_PROCESSOR_REG(processor_reg)                                                                                 
 	RET_FROM_INT_HANDLER    
 }
 
 void int_handler_generic_25() 
 {
 	struct t_processor_reg processor_reg;
-	struct t_processor_reg _processor_reg;
 	
-	SAVE_PROCESSOR_REG
-	//SWITCH_DS_TO_KERNEL_MODE
+	SAVE_PROCESSOR_REG(processor_reg)
 	exception();
-	_processor_reg = processor_reg;
 	EOI_TO_LAPIC
-	RESTORE_PROCESSOR_REG                                                                                   
+	RESTORE_PROCESSOR_REG(processor_reg)                                                                                 
 	RET_FROM_INT_HANDLER    
 }
 
 void int_handler_generic_26() 
 {
 	struct t_processor_reg processor_reg;
-	struct t_processor_reg _processor_reg;
 	
-	SAVE_PROCESSOR_REG
-	//SWITCH_DS_TO_KERNEL_MODE
+	SAVE_PROCESSOR_REG(processor_reg)
 	exception();
-	_processor_reg = processor_reg;
 	EOI_TO_LAPIC
-	RESTORE_PROCESSOR_REG                                                                                   
+	RESTORE_PROCESSOR_REG(processor_reg)                                                                                 
 	RET_FROM_INT_HANDLER    
 }
 
 void int_handler_generic_27() 
 {
 	struct t_processor_reg processor_reg;
-	struct t_processor_reg _processor_reg;
 	
-	SAVE_PROCESSOR_REG
-	//SWITCH_DS_TO_KERNEL_MODE
+	SAVE_PROCESSOR_REG(processor_reg)
 	exception();
-	_processor_reg = processor_reg;
 	EOI_TO_LAPIC
-	RESTORE_PROCESSOR_REG                                                                                   
+	RESTORE_PROCESSOR_REG(processor_reg)                                                                                 
 	RET_FROM_INT_HANDLER    
 }
 
 void int_handler_generic_28() 
 {
 	struct t_processor_reg processor_reg;
-	struct t_processor_reg _processor_reg;
 	
-	SAVE_PROCESSOR_REG
-	//SWITCH_DS_TO_KERNEL_MODE
+	SAVE_PROCESSOR_REG(processor_reg)
 	exception();
-	_processor_reg = processor_reg;
 	EOI_TO_LAPIC
-	RESTORE_PROCESSOR_REG                                                                                   
+	RESTORE_PROCESSOR_REG(processor_reg)                                                                                 
 	RET_FROM_INT_HANDLER    
 }
 
 void int_handler_generic_29() 
 {
 	struct t_processor_reg processor_reg;
-	struct t_processor_reg _processor_reg;
 	
-	SAVE_PROCESSOR_REG
-	//SWITCH_DS_TO_KERNEL_MODE
+	SAVE_PROCESSOR_REG(processor_reg)
 	exception();
-	_processor_reg = processor_reg;
 	EOI_TO_LAPIC
-	RESTORE_PROCESSOR_REG                                                                                   
+	RESTORE_PROCESSOR_REG(processor_reg)                                                                                 
 	RET_FROM_INT_HANDLER    
 }
 
 void int_handler_generic_30() 
 {
 	struct t_processor_reg processor_reg;
-	struct t_processor_reg _processor_reg;
 	
-	SAVE_PROCESSOR_REG
-	//SWITCH_DS_TO_KERNEL_MODE
+	SAVE_PROCESSOR_REG(processor_reg)
 	exception();
-	_processor_reg = processor_reg;
 	EOI_TO_LAPIC
-	RESTORE_PROCESSOR_REG                                                                                   
+	RESTORE_PROCESSOR_REG(processor_reg)                                                                                 
 	RET_FROM_INT_HANDLER    
 }
 
 void int_handler_generic_31() 
 {
 	struct t_processor_reg processor_reg;
-	struct t_processor_reg _processor_reg;
 	
-	SAVE_PROCESSOR_REG
-	//SWITCH_DS_TO_KERNEL_MODE
+	SAVE_PROCESSOR_REG(processor_reg)
 	exception();
-	_processor_reg = processor_reg;
 	EOI_TO_LAPIC
-	RESTORE_PROCESSOR_REG                                                                                   
+	RESTORE_PROCESSOR_REG(processor_reg)                                                                                 
 	RET_FROM_INT_HANDLER    
 }
 
 void int_handler_generic_32() 
 {
 	struct t_processor_reg processor_reg;
-	struct t_processor_reg _processor_reg;
 	
-	SAVE_PROCESSOR_REG
-	//SWITCH_DS_TO_KERNEL_MODE
+	SAVE_PROCESSOR_REG(processor_reg)
 	exception();
-	_processor_reg = processor_reg;
 	EOI_TO_LAPIC
-	RESTORE_PROCESSOR_REG                                                                                   
+	RESTORE_PROCESSOR_REG(processor_reg)                                                                                 
 	RET_FROM_INT_HANDLER    
 }
 
 void int_handler_generic_33() 
 {
 	struct t_processor_reg processor_reg;
-	struct t_processor_reg _processor_reg;
 	
-	SAVE_PROCESSOR_REG
-	//SWITCH_DS_TO_KERNEL_MODE
+	SAVE_PROCESSOR_REG(processor_reg)
 	exception();
-	_processor_reg = processor_reg;
 	EOI_TO_LAPIC
-	RESTORE_PROCESSOR_REG                                                                                   
+	RESTORE_PROCESSOR_REG(processor_reg)                                                                                 
 	RET_FROM_INT_HANDLER    
 }
 
 void int_handler_generic_34() 
 {
 	struct t_processor_reg processor_reg;
-	struct t_processor_reg _processor_reg;
 	
-	SAVE_PROCESSOR_REG
-	//SWITCH_DS_TO_KERNEL_MODE
+	SAVE_PROCESSOR_REG(processor_reg)
 	exception();
-	_processor_reg = processor_reg;
 	EOI_TO_LAPIC
-	RESTORE_PROCESSOR_REG                                                                                   
+	RESTORE_PROCESSOR_REG(processor_reg)                                                                                 
 	RET_FROM_INT_HANDLER    
 }
 
 void int_handler_generic_35() 
 {
 	struct t_processor_reg processor_reg;
-	struct t_processor_reg _processor_reg;
 	
-	SAVE_PROCESSOR_REG
-	//SWITCH_DS_TO_KERNEL_MODE
+	SAVE_PROCESSOR_REG(processor_reg)
 	exception();
-	_processor_reg = processor_reg;
 	EOI_TO_LAPIC
-	RESTORE_PROCESSOR_REG                                                                                   
+	RESTORE_PROCESSOR_REG(processor_reg)                                                                                 
 	RET_FROM_INT_HANDLER    
 }
 
 void int_handler_generic_36() 
 {
 	struct t_processor_reg processor_reg;
-	struct t_processor_reg _processor_reg;
 	
-	SAVE_PROCESSOR_REG
-	//SWITCH_DS_TO_KERNEL_MODE
+	SAVE_PROCESSOR_REG(processor_reg)
 	exception();
-	_processor_reg = processor_reg;
 	EOI_TO_LAPIC
-	RESTORE_PROCESSOR_REG                                                                                   
+	RESTORE_PROCESSOR_REG(processor_reg)                                                                                 
 	RET_FROM_INT_HANDLER    
 }
 
 void int_handler_generic_37() 
 {
 	struct t_processor_reg processor_reg;
-	struct t_processor_reg _processor_reg;
 	
-	SAVE_PROCESSOR_REG
-	//SWITCH_DS_TO_KERNEL_MODE
+	SAVE_PROCESSOR_REG(processor_reg)
 	exception();
-	_processor_reg = processor_reg;
 	EOI_TO_LAPIC
-	RESTORE_PROCESSOR_REG                                                                                   
+	RESTORE_PROCESSOR_REG(processor_reg)                                                                                 
 	RET_FROM_INT_HANDLER    
 }
 
 void int_handler_generic_38() 
 {
 	struct t_processor_reg processor_reg;
-	struct t_processor_reg _processor_reg;
 	
-	SAVE_PROCESSOR_REG
-	//SWITCH_DS_TO_KERNEL_MODE
+	SAVE_PROCESSOR_REG(processor_reg)
 	exception();
-	_processor_reg = processor_reg;
 	EOI_TO_LAPIC
-	RESTORE_PROCESSOR_REG                                                                                   
+	RESTORE_PROCESSOR_REG(processor_reg)                                                                                 
 	RET_FROM_INT_HANDLER    
 }
 
 void int_handler_generic_39() 
 {
 	struct t_processor_reg processor_reg;
-	struct t_processor_reg _processor_reg;
 	
-	SAVE_PROCESSOR_REG
-	//SWITCH_DS_TO_KERNEL_MODE
+	SAVE_PROCESSOR_REG(processor_reg)
 	exception();
-	_processor_reg = processor_reg;
 	EOI_TO_LAPIC
-	RESTORE_PROCESSOR_REG                                                                                   
+	RESTORE_PROCESSOR_REG(processor_reg)                                                                                 
 	RET_FROM_INT_HANDLER    
 }
 
 void int_handler_generic_40() 
 {
 	struct t_processor_reg processor_reg;
-	struct t_processor_reg _processor_reg;
 	
-	SAVE_PROCESSOR_REG
-	//SWITCH_DS_TO_KERNEL_MODE
+	SAVE_PROCESSOR_REG(processor_reg)
 	exception();
-	_processor_reg = processor_reg;
 	EOI_TO_LAPIC
-	RESTORE_PROCESSOR_REG                                                                                   
+	RESTORE_PROCESSOR_REG(processor_reg)                                                                                 
 	RET_FROM_INT_HANDLER    
 }
 
 void int_handler_generic_41() 
 {
 	struct t_processor_reg processor_reg;
-	struct t_processor_reg _processor_reg;
 	
-	SAVE_PROCESSOR_REG
-	//SWITCH_DS_TO_KERNEL_MODE
+	SAVE_PROCESSOR_REG(processor_reg)
 	exception();
-	_processor_reg = processor_reg;
 	EOI_TO_LAPIC
-	RESTORE_PROCESSOR_REG                                                                                   
+	RESTORE_PROCESSOR_REG(processor_reg)                                                                                 
 	RET_FROM_INT_HANDLER    
 }
 
 void int_handler_generic_42() 
 {
 	struct t_processor_reg processor_reg;
-	struct t_processor_reg _processor_reg;
 	
-	SAVE_PROCESSOR_REG
-	//SWITCH_DS_TO_KERNEL_MODE
+	SAVE_PROCESSOR_REG(processor_reg)
 	exception();
-	_processor_reg = processor_reg;
 	EOI_TO_LAPIC
-	RESTORE_PROCESSOR_REG                                                                                   
+	RESTORE_PROCESSOR_REG(processor_reg)                                                                                 
 	RET_FROM_INT_HANDLER    
 }
 
 void int_handler_generic_43() 
 {
 	struct t_processor_reg processor_reg;
-	struct t_processor_reg _processor_reg;
 	
-	SAVE_PROCESSOR_REG
-	//SWITCH_DS_TO_KERNEL_MODE
+	SAVE_PROCESSOR_REG(processor_reg)
 	exception();
-	_processor_reg = processor_reg;
 	EOI_TO_LAPIC
-	RESTORE_PROCESSOR_REG                                                                                   
+	RESTORE_PROCESSOR_REG(processor_reg)                                                                                 
 	RET_FROM_INT_HANDLER    
 }
 
 void int_handler_generic_44() 
 {
 	struct t_processor_reg processor_reg;
-	struct t_processor_reg _processor_reg;
 	
-	SAVE_PROCESSOR_REG
-	//SWITCH_DS_TO_KERNEL_MODE
+	SAVE_PROCESSOR_REG(processor_reg)
 	exception();
-	_processor_reg = processor_reg;
 	EOI_TO_LAPIC
-	RESTORE_PROCESSOR_REG                                                                                   
+	RESTORE_PROCESSOR_REG(processor_reg)                                                                                 
 	RET_FROM_INT_HANDLER    
 }
 
 void int_handler_generic_45() 
 {
 	struct t_processor_reg processor_reg;
-	struct t_processor_reg _processor_reg;
 	
-	SAVE_PROCESSOR_REG
-	//SWITCH_DS_TO_KERNEL_MODE
+	SAVE_PROCESSOR_REG(processor_reg)
 	exception();
-	_processor_reg = processor_reg;
 	EOI_TO_LAPIC
-	RESTORE_PROCESSOR_REG                                                                                   
+	RESTORE_PROCESSOR_REG(processor_reg)                                                                                 
 	RET_FROM_INT_HANDLER    
 }
 
 void int_handler_generic_46() 
 {
 	struct t_processor_reg processor_reg;
-	struct t_processor_reg _processor_reg;
 	
-	SAVE_PROCESSOR_REG
-	//SWITCH_DS_TO_KERNEL_MODE
+	SAVE_PROCESSOR_REG(processor_reg)
 	exception();
-	_processor_reg = processor_reg;
 	EOI_TO_LAPIC
-	RESTORE_PROCESSOR_REG                                                                                   
+	RESTORE_PROCESSOR_REG(processor_reg)                                                                                 
 	RET_FROM_INT_HANDLER    
 }
 
 void int_handler_generic_47() 
 {
 	struct t_processor_reg processor_reg;
-	struct t_processor_reg _processor_reg;
 	
-	SAVE_PROCESSOR_REG
-	//SWITCH_DS_TO_KERNEL_MODE
+	SAVE_PROCESSOR_REG(processor_reg)
 	exception();
-	_processor_reg = processor_reg;
 	EOI_TO_LAPIC
-	RESTORE_PROCESSOR_REG                                                                                   
+	RESTORE_PROCESSOR_REG(processor_reg)                                                                                 
 	RET_FROM_INT_HANDLER    
 }
 
 void int_handler_generic_48() 
 {
 	struct t_processor_reg processor_reg;
-	struct t_processor_reg _processor_reg;
 	
-	SAVE_PROCESSOR_REG
-	//SWITCH_DS_TO_KERNEL_MODE
+	SAVE_PROCESSOR_REG(processor_reg)
 	exception();
-	_processor_reg = processor_reg;
 	EOI_TO_LAPIC
-	RESTORE_PROCESSOR_REG                                                                                   
+	RESTORE_PROCESSOR_REG(processor_reg)                                                                                 
 	RET_FROM_INT_HANDLER    
 }
 
 void int_handler_generic_49() 
 {
 	struct t_processor_reg processor_reg;
-	struct t_processor_reg _processor_reg;
 	
-	SAVE_PROCESSOR_REG
-	//SWITCH_DS_TO_KERNEL_MODE
+	SAVE_PROCESSOR_REG(processor_reg)
 	exception();
-	_processor_reg = processor_reg;
 	EOI_TO_LAPIC
-	RESTORE_PROCESSOR_REG                                                                                   
+	RESTORE_PROCESSOR_REG(processor_reg)                                                                                 
 	RET_FROM_INT_HANDLER    
 }
 
 void int_handler_generic_50() 
 {
 	struct t_processor_reg processor_reg;
-	struct t_processor_reg _processor_reg;
 	
-	SAVE_PROCESSOR_REG
-	//SWITCH_DS_TO_KERNEL_MODE
+	SAVE_PROCESSOR_REG(processor_reg)
 	exception();
-	_processor_reg = processor_reg;
 	EOI_TO_LAPIC
-	RESTORE_PROCESSOR_REG                                                                                   
+	RESTORE_PROCESSOR_REG(processor_reg)                                                                                 
 	RET_FROM_INT_HANDLER    
 }
 
@@ -1125,5 +968,103 @@ void init_idt()
 void set_idt_entry(int entry,struct t_i_desc* i_desc)
 {
 	idt[entry]=*i_desc;
+}
+
+void post_context_switch()
+{
+	int cpuIndex;
+	struct t_processor_reg processor_reg;
+	
+	cpuIndex = get_current_process_context();
+	processor_reg = system.process_info->context_switch_data.processor_reg[cpuIndex];
+	if (system.process_info->context_switch_data.action[cpuIndex] == 2)                                                                                        
+	{                                                                                                       
+		DO_STACK_FRAME(system.process_info->context_switch_data.processor_reg[cpuIndex].rsp-8);                                                           
+		free_vm_process(&system.process_info->context_switch_data.old_process_context[cpuIndex]);                                                         
+		buddy_free_page(system.buddy_desc,FROM_PHY_TO_VIRT(system.process_info->context_switch_data.old_process_context[cpuIndex].phy_kernel_stack));     
+	}                                                                                                
+	RESTORE_PROCESSOR_REG(processor_reg)                                                                          
+	EXIT_SYSCALL_HANDLER       
+}
+
+void exit_int_handler(struct t_processor_reg processor_reg, int on_exit_action, u64* params)
+{
+	u8 stop = 0; 
+	int cpuIndex;
+	struct t_processor_reg _processor_reg;
+	
+	CLI
+	_processor_reg = processor_reg;        
+	cpuIndex = get_current_process_context();                                                                                                
+	if (system.int_path_count == 0 && system.force_scheduling == 0 && system.flush_network == 1)                    
+	{                                                                                                               
+        system.flush_network = 0;                                                                       
+		dequeue_packet(system.network_desc);                                                            
+		equeue_packet(system.network_desc);                                                             
+		system.flush_network = 1;                                                                       
+	}                                                                                                               
+	system.process_info->context_switch_data.action[cpuIndex] = on_exit_action;                                                                                                  
+	system.process_info->context_switch_data.old_process_context[cpuIndex] =* (struct t_process_context*)system.process_info->current_process[cpuIndex]->val;                                                                            
+	system.process_info->context_switch_data.processor_reg[cpuIndex] = processor_reg;                                                                                   
+	if (system.force_scheduling == 1 && 0 == 0 && system.int_path_count == 0)                                  
+	{                                                                                                               
+		system.process_info->context_switch_data.action[cpuIndex] = 1;                                                                                           
+		if (system.process_info->context_switch_data.old_process_context[cpuIndex].proc_status == EXITING)                                                    
+		{                                                                                                       
+			system.process_info->context_switch_data.action[cpuIndex] = 2;                                                                                   
+		}                                                                                                       
+	}                                                                                                                                                                                                                          
+	if (system.process_info->context_switch_data.action[cpuIndex] > 0)                                                                                                 
+	{	system.force_scheduling = 0;
+		stop = 0;                                                                            
+		while(!stop)                                                                                             
+		{                                                                                                       
+			schedule(&system.process_info->context_switch_data.old_process_context[cpuIndex], &_processor_reg);                                            
+			system.process_info->context_switch_data.new_process_context[cpuIndex] = *(struct t_process_context*) system.process_info->current_process[cpuIndex]->val;
+			if (system.process_info->context_switch_data.new_process_context[cpuIndex].sig_num == SIGINT)                                                    
+			{                                                                                            
+				_exit(0);
+				free_vm_process(&system.process_info->context_switch_data.new_process_context[cpuIndex]);                                                         
+				buddy_free_page(system.buddy_desc,FROM_PHY_TO_VIRT(system.process_info->context_switch_data.new_process_context[cpuIndex].phy_kernel_stack));           
+			}                                                                                               
+			else                                                                                            
+			{                                                                                               
+				stop = 1;                                                                               
+			}                                                                                               
+		}     
+		if (system.process_info->context_switch_data.new_process_context[cpuIndex].pid != system.process_info->context_switch_data.old_process_context[cpuIndex].pid)                                               
+		{          
+			system.process_info->context_switch_data.processor_reg[cpuIndex] = system.process_info->context_switch_data.new_process_context[cpuIndex].processor_reg;                                                                                                                  
+		}
+		if (params != NULL)
+		{
+			if (params[0] == 0)
+			{
+				t_spinlock_desc* lock = params[0];
+				if (lock != NULL)
+				{
+					SPINLOCK_UNLOCK(*lock,cpuIndex);
+				}
+				ENABLE_PREEMPTION(cpuIndex)
+			}
+			else if (params[0] == 1)
+			{
+				unmask_entry(17);
+			}
+		}                                                                                                      
+		SWITCH_PAGE_DIR(FROM_VIRT_TO_PHY(system.process_info->context_switch_data.new_process_context[cpuIndex].page_pml4))                       
+		DO_STACK_FRAME(system.process_info->context_switch_data.processor_reg[get_current_process_context()].rsp-8);
+		post_context_switch();                                                                                                                                                                    
+	}                                                                                                          	
+	else if (system.process_info->context_switch_data.action[cpuIndex] == 0)                                                                                              	
+	{                                                                                                               
+		RESTORE_PROCESSOR_REG(system.process_info->context_switch_data.processor_reg[cpuIndex])                                                                         
+		EXIT_SYSCALL_HANDLER                                                                                 
+	}
+	else
+	{
+		RESTORE_PROCESSOR_REG(system.process_info->context_switch_data.processor_reg[cpuIndex])                                                                         
+		RET_FROM_INT_HANDLER_FLUSH
+	}
 }
 

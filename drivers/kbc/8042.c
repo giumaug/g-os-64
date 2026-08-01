@@ -310,7 +310,7 @@ void int_handler_kbc()
 	t_llist_node* sentinel  = NULL;
 	t_llist_node* next = NULL;
 	
-	SAVE_PROCESSOR_REG
+	SAVE_PROCESSOR_REG(processor_reg)
 	//SWITCH_DS_TO_KERNEL_MODE
 	DISABLE_PREEMPTION(get_current_process_context())
 	mask_entry(1);
@@ -378,7 +378,8 @@ void int_handler_kbc()
 	}
 	unmask_entry(1);
 	ENABLE_PREEMPTION(get_current_process_context());
-	EXIT_INT_HANDLER(0,processor_reg)                                                                              
+	exit_int_handler(processor_reg, 0, NULL);
+	//EXIT_INT_HANDLER(0,processor_reg,NULL)                                                                              
 }
 
 char read_buf()

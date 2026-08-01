@@ -28,6 +28,7 @@ struct s_scheduler_desc;
 struct s_buddy_desc;
 struct s_device_desc;
 struct s_network_desc;
+struct s_context_switch_data;
 
 typedef struct s_tcp_fin_status
 {

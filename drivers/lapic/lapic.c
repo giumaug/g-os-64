@@ -18,6 +18,8 @@ static u32 read_reg(u32 reg_offset);
 static void write_reg(u32 reg_offset, u32 val);
 static void set_timer_divisor(int divisor);
 
+static u8 lapic_inizialized = 0;
+
 void init_lapic()
 {
 	u32 val;
@@ -39,6 +41,7 @@ void init_lapic()
 	init_timer();
 	CLI
 	free_pit();
+	lapic_inizialized = 1;
 }
 
 static void init_timer()
@@ -154,7 +157,7 @@ void int_handler_lapic()
 	t_timer* timer = NULL;
 	int cpuId;
 	
-	SAVE_PROCESSOR_REG
+	SAVE_PROCESSOR_REG(processor_reg)
 	EOI_TO_LAPIC
 	//SWITCH_DS_TO_KERNEL_MODE
 	
@@ -254,7 +257,8 @@ EXIT_HANDLER:;
 		node = ll_next(node);
 	}
 	while(node != ll_first(system.timer_list));
-	//---EXIT_INT_HANDLER(is_schedule,processor_reg);
+//---	EXIT_INT_HANDLER(is_schedule,processor_reg,NULL);
+    exit_int_handler(processor_reg, is_schedule, NULL);                                              
 }
 
 void ap_init()
@@ -358,6 +362,10 @@ u8 get_current_process_context()
 	u8 id;
 	u8 mapId = 0;
 	
+	if (lapic_inizialized == 0)
+	{
+		return 0;
+	}
 	id = read_reg(LAPIC_ID);
 	switch (id) 
 	{
@@ -539,6 +547,7 @@ void ap_post_init(int cpuId)
     
   _cpuId = cpuId;
   process_context = kmalloc(sizeof(struct t_process_context));
+  u64 xxx = buddy_alloc_page(system.buddy_desc,KERNEL_STACK_SIZE);
   process_context->phy_kernel_stack = FROM_VIRT_TO_PHY(buddy_alloc_page(system.buddy_desc,KERNEL_STACK_SIZE));
   init_vm_process(process_context);
   
@@ -549,8 +558,8 @@ void ap_post_init(int cpuId)
   buddy_free_page(system.buddy_desc, tmp_phy_kernel_stack[_cpuId - 1]);
   system.process_info->current_process[_cpuId] = ll_prepend(system.scheduler_desc[_cpuId]->scheduler_queue[9],process_context);
   
-  //params[0]=0;       
-  //SYSCALL(13L,params);
+  params[0]=0;       
+  SYSCALL(13L,params);
 }
 	
 

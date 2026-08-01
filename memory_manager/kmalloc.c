@@ -161,7 +161,14 @@ void* kmalloc(unsigned int mem_size)
 
 	SAVE_IF_STATUS
 	CLI
-	SPINLOCK_LOCK(mp_lock,get_current_process_context());
+	//SPINLOCK_LOCK(mp_lock,get_current_process_context());
+	
+	//--------------------
+	int cpuIndex = get_current_process_context();
+	asm("lock;incl %0;":"=m"(system.int_path_count[cpuIndex]):"m"(system.int_path_count[cpuIndex]):"memory");
+	asm ("_spin%=: mov $0x1,%%eax;xchg %%eax,%0;cmp $0,%%eax;jne _spin%=;":"+m"((mp_lock).status)::"%eax","memory");
+	//--------------------
+	
 	for (i=0;i<POOL_NUM;i++)
 	{
 		if (mem_size<=pow2(2+i)) break;

@@ -109,6 +109,16 @@ struct t_process_context
 //core and thread. For 4 core 1 thread machine we have:
 //core0 -> 0, core1 -> 1, core2 -> 2, core3 -> 3. Dynamic protocol is not implemented. We use static mapping.
 
+typedef struct s_context_switch_data
+{
+	struct t_process_context current_process_context[NUM_CPU];                                                  	
+	struct t_process_context old_process_context[NUM_CPU];                                                      	
+	struct t_process_context new_process_context[NUM_CPU];	                                                        
+	struct t_processor_reg processor_reg[NUM_CPU];                                                          
+	int action[NUM_CPU]; 	
+}
+t_context_switch_data;
+
 struct t_process_info
 {
 	//t_llist_node* current_process;
@@ -123,6 +133,7 @@ struct t_process_info
 	//struct t_processor_reg current_processor_reg[NUM_CPU];
 	t_hashtable* pid_hash;
 	t_hashtable* pgid_hash;
+	t_context_switch_data context_switch_data;
 };
 
 #endif

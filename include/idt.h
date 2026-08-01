@@ -4,6 +4,9 @@
 #include "system.h"
 #include "scheduler/process.h"
 
+void post_context_switch();
+void exit_int_handler(struct t_processor_reg processor_reg, int on_exit_action, u64* params);
+
 struct t_i_desc {
    u16 baseLow;    	 
    u16 selector;      	
@@ -92,16 +95,16 @@ void set_idt_entry(int entry,struct t_i_desc* i_desc);
 			free_vm_process(&_old_process_context);                                                         	    \
 			buddy_free_page(system.buddy_desc, FROM_PHY_TO_VIRT(_old_process_context.phy_kernel_stack));     	    \
 		}                                                                                                       	\
-		RESTORE_PROCESSOR_REG                                                                                   	\
+		RESTORE_PROCESSOR_REG(_processor_reg)                                                                       \
 		EXIT_SYSCALL_HANDLER                                                                                    	\
 	}                                                                                                          		\
 	else                                                                                                       		\
 	{                                                                                                               \
-		RESTORE_PROCESSOR_REG                                                                                   	\
+		RESTORE_PROCESSOR_REG(_processor_reg)                                                                       \
 		RET_FROM_INT_HANDLER                                                                                    	\
 	}
 	
-#define EXIT_INT_HANDLER(action,processor_reg,post_handler) 	                                                                         \
+#define iEXIT_INT_HANDLER(action,processor_reg,post_handler_addr) 	                                                     \
 	                                                                                                                     \
 	static struct t_process_context _current_process_context;                                                  	         \
 	static struct t_process_context _old_process_context;                                                      	         \
@@ -111,9 +114,9 @@ void set_idt_entry(int entry,struct t_i_desc* i_desc);
 	static u8 stop = 0;                                                                                                  \
 	static int cpuIndex;                                                                                                 \
 	static t_post_handler _post_handler;                                                                                 \
+	static t_post_handler* _post_handler_addr = (t_post_handler*)post_handler_addr;                                      \
                                                                                                                          \
 	CLI                                                                                                                  \
-	_post_handler = post_handler;                                                                                        \                                                                                                            \
 	cpuIndex = get_current_process_context();                                                                            \
 	if (system.int_path_count == 0 && system.force_scheduling == 0 && system.flush_network == 1)                         \
 	{                                                                                                                    \
@@ -164,19 +167,24 @@ void set_idt_entry(int entry,struct t_i_desc* i_desc);
 			DO_STACK_FRAME(_processor_reg.rsp-8);                                                                        \
 			free_vm_process(&_old_process_context);                                                                      \
 			buddy_free_page(system.buddy_desc,FROM_PHY_TO_VIRT(_old_process_context.phy_kernel_stack));                  \
-		}                                                                                                                \    
-		if (_post_handler != NULL)                                                                                       \
+		}                                                                                                                \
+		if (_post_handler_addr != NULL)                                                                                  \
 		{                                                                                                                \
+			_post_handler = *_post_handler_addr;                                                                         \
 			_post_handler.exec(_post_handler.arg);                                                                       \
-		}                                                                                                                \                                                                                                                  \		
-		RESTORE_PROCESSOR_REG                                                                                            \
+		}                                                                                                                \
+		RESTORE_PROCESSOR_REG(_processor_reg)                                                                            \
 		EXIT_SYSCALL_HANDLER                                                                                             \
 	}                                                                                                          	         \
 	else                                                                                                       	         \
 	{                                                                                                                    \
-		RESTORE_PROCESSOR_REG                                                                                            \
+		RESTORE_PROCESSOR_REG(_processor_reg)                                                                            \
 		RET_FROM_INT_HANDLER                                                                                             \
 	}                                                                                             
+
+
          
 #endif
+
+
 

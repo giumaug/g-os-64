@@ -44,7 +44,7 @@ void int_handler_pit()
 	struct t_processor_reg processor_reg;
 	struct t_processor_reg _processor_reg;
 
-	SAVE_PROCESSOR_REG
+	SAVE_PROCESSOR_REG(processor_reg)
 	//EOI_TO_LAPIC
 	//SWITCH_DS_TO_KERNEL_MODE
 	_processor_reg=processor_reg;
@@ -66,6 +66,6 @@ void int_handler_pit()
 	}
 
 	EOI_TO_LAPIC
-	RESTORE_PROCESSOR_REG                                                                                   	
+	RESTORE_PROCESSOR_REG(_processor_reg)                                                                                   	
 	RET_FROM_INT_HANDLER   
 }

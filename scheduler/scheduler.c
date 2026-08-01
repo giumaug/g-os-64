@@ -220,10 +220,9 @@ void _sleep()
 	_sleep_and_unlock(NULL);
 }
 
-//PARTIRE DA QUI!!!!!!!!!!!!!!!!!!!!!!!!
 void _sleep_and_unlock(t_spinlock_desc* lock)
 {
-	u64 params[1];
+	u64 params[2];
 	int cpuIndex;
 	struct t_process_context* current_process;
 	
@@ -236,11 +235,13 @@ void _sleep_and_unlock(t_spinlock_desc* lock)
 	current_process->proc_status=SLEEPING;
 	if (lock!=NULL)
 	{
-		params[0] = lock;
+		params[0] = 0;
+		params[1] = lock;
 	}
 	else
 	{
-		params[0] = NULL;
+		params[0] = 0;
+		params[1] = NULL;
 	}
 	SUSPEND(params);
 	//Preemption is enabled at the syscall's end.

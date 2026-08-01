@@ -9,7 +9,8 @@ t_device_desc* init_device(u8 device_num, u8 partition_num)
 	device_desc->partition_num = partition_num;
 	device_desc->serving_request = NULL;
 	sem_init(&device_desc->mutex, 1);
-	sem_init(&device_desc->sem, 0);
+	//sem_init(&device_desc->sem, 0);
+	//SPINLOCK_INIT(device_desc->lock);
 	return device_desc;
 }
 
