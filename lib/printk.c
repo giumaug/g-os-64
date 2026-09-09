@@ -36,7 +36,7 @@ void static printk_num(int val)
 void static printk_char(char* text)
 {
 	int index=-1;
-	struct t_process_context *current_process_context=system.process_info->current_process[get_current_process_context()]->val;
+	struct t_process_context *current_process_context=system.process_info->current_process[GET_CPU_INDEX]->val;
 	t_console_desc *console_desc=current_process_context->console_desc;
 	
 	while (text[++index]!='\0')
@@ -52,7 +52,7 @@ void printk(char *text,...)
 	int param_index = -1;
 	//long long **param_val;
 	int params[2];
-	struct t_process_context *current_process_context=system.process_info->current_process[get_current_process_context()]->val;
+	struct t_process_context *current_process_context=system.process_info->current_process[GET_CPU_INDEX]->val;
 	t_console_desc *console_desc=current_process_context->console_desc;
 	void* var_params[6];
 	

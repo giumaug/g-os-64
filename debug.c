@@ -78,7 +78,7 @@ void _check_process_context_2(int val)
 	int count = 0;
 	int cpuId;
 
-    cpuId = get_current_process_context();
+    cpuId = GET_CPU_INDEX;
 	while(index<10)
 	{
 		sentinel_node=ll_sentinel(system.scheduler_desc[cpuId]->scheduler_queue[index]);
@@ -110,7 +110,7 @@ void __check_process_context(int val)
 	int count = 0;
 	int cpuId;
 
-    cpuId = get_current_process_context();
+    cpuId = GET_CPU_INDEX;
 	while(index<10)
 	{
 		sentinel_node=ll_sentinel(system.scheduler_desc[cpuId]->scheduler_queue[index]);

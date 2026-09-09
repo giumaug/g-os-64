@@ -70,7 +70,7 @@
 						io_request->sector_count=_sector_count;					                                                \
 						io_request->lba=_lba;							                                                        \
 						io_request->io_buffer=_io_buffer;					                                                    \
-						io_request->process_context=system.process_info->current_process[get_current_process_context()]->val;	\
+						io_request->process_context=system.process_info->current_process[GET_CPU_INDEX]->val;	                \
 						ext2->device_desc->write(io_request);                                                                   \
 						kfree(io_request);                                                                                      \
                         } while(0);                                       
@@ -82,7 +82,7 @@
 						io_request->sector_count=_sector_count;					                                                \
 						io_request->lba=_lba;							                                                        \
 						io_request->io_buffer=_io_buffer;					                                                    \
-						io_request->process_context=system.process_info->current_process[get_current_process_context()]->val;	\
+						io_request->process_context=system.process_info->current_process[GET_CPU_INDEX]->val;	                \
 						ext2->device_desc->read(io_request); 					                                                \
                         kfree(io_request);                                                                                      \
 						} while(0);
@@ -94,7 +94,7 @@
 						io_request->sector_count=_sector_count;					                                                \
 						io_request->lba=_lba;							                                                        \
 						io_request->io_buffer=_io_buffer;					                                                    \
-						io_request->process_context=system.process_info->current_process[get_current_process_context()]->val;	\
+						io_request->process_context=system.process_info->current_process[GET_CPU_INDEX]->val;	                \
 						ext2->device_desc->read_dma(io_request); 				                                                \
                         kfree(io_request);                                                                                      \
 						} while(0);
@@ -128,7 +128,7 @@
 						io_request->sector_count=_sector_count;					                                                \
 						io_request->lba=_lba;							                                                        \
 						io_request->io_buffer=_io_buffer;					                                                    \
-						io_request->process_context=system.process_info->current_process[get_current_process_context()]->val;	\
+						io_request->process_context=system.process_info->current_process[GET_CPU_INDEX]->val;	                \
 						ext2->device_desc->write_dma(io_request); 				                                                \
                         kfree(io_request);                                                                                      \
 						} while(0);

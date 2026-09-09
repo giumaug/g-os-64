@@ -45,5 +45,6 @@ void init_lapic();
 void ap_init();
 void relocate_init_code();
 u8 get_current_process_context();
+void set_gs_base(u64 base);
 
 #endif

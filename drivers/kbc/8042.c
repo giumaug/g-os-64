@@ -312,7 +312,7 @@ void int_handler_kbc()
 	
 	SAVE_PROCESSOR_REG(processor_reg)
 	//SWITCH_DS_TO_KERNEL_MODE
-	DISABLE_PREEMPTION(get_current_process_context())
+	DISABLE_PREEMPTION(GET_CPU_INDEX)
 	mask_entry(1);
 	EOI_TO_LAPIC
 	STI	
@@ -377,7 +377,7 @@ void int_handler_kbc()
            	break;
 	}
 	unmask_entry(1);
-	ENABLE_PREEMPTION(get_current_process_context());
+	ENABLE_PREEMPTION(GET_CPU_INDEX);
 	exit_int_handler(processor_reg, 0, NULL);
 	//EXIT_INT_HANDLER(0,processor_reg,NULL)                                                                              
 }

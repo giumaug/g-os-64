@@ -23,7 +23,7 @@ void syscall_post_handler(t_spinlock_desc* lock)
 {
 	int cpuIndex;
 	
-	cpuIndex = get_current_process_context(); 
+	cpuIndex = GET_CPU_INDEX; 
 	if (lock != NULL)
 	{
 		SPINLOCK_UNLOCK(*lock,cpuIndex);
@@ -50,7 +50,7 @@ void syscall_handler()
 	SWITCH_SS_TO_KERNEL_MODE
 	syscall_num=processor_reg.rax;
 	on_exit_action=0;
-	current_process_context=system.process_info->current_process[get_current_process_context()]->val;
+	current_process_context=system.process_info->current_process[GET_CPU_INDEX]->val;
 	
 	t_console_desc *console_desc=current_process_context->console_desc;
 	syscall_num=processor_reg.rax;

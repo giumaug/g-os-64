@@ -15,7 +15,7 @@
 #define CURRENT_PROCESS_CONTEXT(current_process_context)                                      \
 do                                                                                            \
 {                                                                                             \
-  t_llist_node* node;node=system.process_info->current_process[get_current_process_context()];\
+  t_llist_node* node;node=system.process_info->current_process[GET_CPU_INDEX];                \
   current_process_context=node->val;                                                          \
 }                                                                                             \
 while (0);

@@ -83,6 +83,15 @@ then
     make process=htcs clean
     make process=htcs all
     make process=htcs install
+    make process=multip clean
+    make process=multip all
+    make process=multip install
+    make process=multic clean
+    make process=multic all
+    make process=multic install
+    make process=hello clean
+    make process=hello all
+    make process=hello install
 
     mount /dev/loop4 /mnt
     echo $BASE_DIR

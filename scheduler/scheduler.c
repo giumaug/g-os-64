@@ -83,10 +83,10 @@ void schedule(struct t_process_context *current_process_context,struct t_process
 	int cpuId;
 
 	index=0;
-	node=system.process_info->current_process[get_current_process_context()];
+	node=system.process_info->current_process[GET_CPU_INDEX];
 	node_orig = node;	
 	current_process_context=node->val;
-	cpuId = get_current_process_context();
+	cpuId = GET_CPU_INDEX;
 
 	while(!stop && index<10)
 	{
@@ -99,7 +99,7 @@ void schedule(struct t_process_context *current_process_context,struct t_process
 			{
 				do_context_switch(current_process_context,processor_reg,next_process_context);	
 				//system.process_info->current_process=next;
-				system.process_info->current_process[get_current_process_context()]=next;
+				system.process_info->current_process[GET_CPU_INDEX]=next;
 				if (current_process_context->proc_status==RUNNING)
 				{
 					adjust_sched_queue(current_process_context);
@@ -136,7 +136,7 @@ void schedule(struct t_process_context *current_process_context,struct t_process
 		{
 			process_0 = system.process_info->process_0->val;
 			do_context_switch(current_process_context,processor_reg,process_0);	
-			system.process_info->current_process[get_current_process_context()] = system.process_info->process_0;
+			system.process_info->current_process[GET_CPU_INDEX] = system.process_info->process_0;
 			if (current_process_context->proc_status==SLEEPING)
 			{
 				ll_delete_node(node);
@@ -226,7 +226,7 @@ void _sleep_and_unlock(t_spinlock_desc* lock)
 	int cpuIndex;
 	struct t_process_context* current_process;
 	
-	cpuIndex = get_current_process_context();
+	cpuIndex = GET_CPU_INDEX;
 	//SAVE_IF_STATUS
 	//CLI     
 	DISABLE_PREEMPTION(cpuIndex)
@@ -258,7 +258,7 @@ void _awake(struct t_process_context *new_process)
 	SAVE_IF_STATUS
 	CLI
 	CURRENT_PROCESS_CONTEXT(process_context);
-	cpuId = get_current_process_context();
+	cpuId = GET_CPU_INDEX;
 	new_process->sleep_time=(system.time-new_process->sleep_time>=1000) ? 1000 : (system.time-new_process->sleep_time);
 	adjust_sched_queue(new_process);
 	//COULD ARRIVE AN ATA INTERRUPT DURING NETWORK FLUSH
@@ -279,7 +279,7 @@ void _pause()
 
 	SAVE_IF_STATUS
 	CLI
-	cpuId = get_current_process_context();
+	cpuId = GET_CPU_INDEX;
 	current_process = system.process_info->current_process[cpuId]->val;
 	if (current_process->sig_num != SIGCHLD)
 	{
@@ -397,7 +397,7 @@ int _fork(struct t_processor_reg processor_reg)
 	CURRENT_PROCESS_CONTEXT(parent_process_context);
 	if (parent_process_context->pid == 0)
 	{
-		system.process_info->process_0 = system.process_info->current_process[get_current_process_context()];
+		system.process_info->process_0 = system.process_info->current_process[GET_CPU_INDEX];
 	}
 	
 	kmemcpy(child_process_context,parent_process_context,sizeof(struct t_process_context));
@@ -580,7 +580,7 @@ void _sleep_time(unsigned int time)
 	SAVE_IF_STATUS	
 	CLI 
 	sleep_wait_queue=system.process_info->sleep_wait_queue;
-	current_process=system.process_info->current_process[get_current_process_context()]->val;
+	current_process=system.process_info->current_process[GET_CPU_INDEX]->val;
 	current_process->assigned_sleep_time=time;
 	current_process->sleep_wait_queue_ref = ll_prepend(sleep_wait_queue,current_process);
 	t1 = system.time;	

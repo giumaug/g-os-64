@@ -32,7 +32,7 @@ void init_console(t_console_desc* console_desc,
 
 void free_console(t_console_desc *console_desc)
 {
-	SPINLOCK_UNLOCK(console_desc->spinlock,get_current_process_context());
+	SPINLOCK_UNLOCK(console_desc->spinlock,GET_CPU_INDEX);
 	kfree(console_desc->out_buf);
 }
 
@@ -41,7 +41,7 @@ char _read_char(t_console_desc *console_desc)
 	char data = NULL;
 	int cpuId;
 
-    cpuId = get_current_process_context();
+    cpuId = GET_CPU_INDEX;
 	while (!(data = read_buf())) 
 	{
 		system.active_console_desc->sleeping_process[cpuId]=system.process_info->current_process[cpuId]->val;
@@ -80,14 +80,14 @@ void _write_char(t_console_desc *console_desc,char data)
 	unsigned int to_end_line;
 	unsigned int i;
 
-	SPINLOCK_LOCK(console_desc->spinlock,get_current_process_context());
+	SPINLOCK_LOCK(console_desc->spinlock,GET_CPU_INDEX);
 	if (data=='\n')
 	{
 		to_end_line=SCREEN_WIDTH -1 - (console_desc->out_buf_index %  SCREEN_WIDTH);
 		for (i=0;i<to_end_line;i++) write_out_buf(console_desc, CHAR_NULL);
 	}
 	else write_out_buf(console_desc,data);
-	SPINLOCK_UNLOCK(console_desc->spinlock,get_current_process_context());
+	SPINLOCK_UNLOCK(console_desc->spinlock,GET_CPU_INDEX);
 }
 
 void _write_char_no_irq(t_console_desc *console_desc, char data)
@@ -114,14 +114,14 @@ void _echo_char(t_console_desc *console_desc,char data)
 
 void _delete_char(t_console_desc *console_desc)
 {
-	SPINLOCK_LOCK(console_desc->spinlock,get_current_process_context());
+	SPINLOCK_LOCK(console_desc->spinlock,GET_CPU_INDEX);
 	//if (console_desc->out_buf_index/SCREEN_WIDTH==(console_desc->out_buf_index+1)/SCREEN_WIDTH)
 	{
 		console_desc->write_char(console_desc->video_buf_index + 1 , CHAR_NULL);
 		console_desc->out_buf[console_desc->out_buf_index--]= CHAR_NULL;
 		console_desc->write_char(console_desc->video_buf_index--, CHAR_NULL);
 	}
-	SPINLOCK_UNLOCK(console_desc->spinlock,get_current_process_context());
+	SPINLOCK_UNLOCK(console_desc->spinlock,GET_CPU_INDEX);
 }
 
 void _enable_cursor(t_console_desc *console_desc)
@@ -136,7 +136,7 @@ void _disable_cursor(t_console_desc *console_desc)
 
 void _update_cursor(t_console_desc* console_desc)
 {	
-	SPINLOCK_LOCK(console_desc->spinlock,get_current_process_context());
+	SPINLOCK_LOCK(console_desc->spinlock,GET_CPU_INDEX);
 	if (console_desc->out_buf_index == console_desc->out_window_end)
 	{
 		scroll(console_desc);
@@ -145,7 +145,7 @@ void _update_cursor(t_console_desc* console_desc)
 	unsigned int cursor_position = console_desc->video_buf_index;
 	INC(cursor_position, console_desc->out_buf_len, 1, 0);
     console_desc->update_cursor(cursor_position);
-	SPINLOCK_UNLOCK(console_desc->spinlock,get_current_process_context());
+	SPINLOCK_UNLOCK(console_desc->spinlock,GET_CPU_INDEX);
 }
 
 static void scroll(t_console_desc *console_desc)

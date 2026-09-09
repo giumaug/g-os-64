@@ -4,9 +4,8 @@ int main()
 {
 	int i = 0;
 
-	for (i = 0;i < 100000;i++) 
+	for (i = 0;i < 1;i++) 
 	{
-		check_free_mem();
 		printf("hello!!! \n");
 		if(fork() == 0) 
 		{

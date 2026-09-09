@@ -14,6 +14,7 @@
 #include "framebuffer/framebuffer.h"
 #include "drivers/ioapic/ioapic.h"
 
+extern int cpu_inizialized;
 extern u64 TSS_ADD;
 extern u64 *AP_TSS;
 
@@ -160,7 +161,11 @@ void kmain(multiboot_info_t* mbd, u64 magic)
 	kernel_stack = KERNEL_STACK - 100;
 	asm volatile ("mov %0,%%rbp;"::"r"(kernel_stack));
 	asm volatile ("mov %0,%%rsp;"::"r"(kernel_stack));
+	
+	while ( __atomic_load_n(&cpu_inizialized, 5) < NUM_CPU);
 	STI
+	
+	//while ( __atomic_load_n(&cpu_inizialized, 5) < NUM_CPU);
 	process_0();	       	
 }
 

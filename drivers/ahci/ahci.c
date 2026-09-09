@@ -106,7 +106,7 @@ void int_handler_ahci()
 	
 	SAVE_PROCESSOR_REG(processor_reg)
 //	SWITCH_DS_TO_KERNEL_MODE
-	DISABLE_PREEMPTION(get_current_process_context())
+	DISABLE_PREEMPTION(GET_CPU_INDEX)
 	mask_entry(17);
 	EOI_TO_LAPIC
 	STI
@@ -132,7 +132,7 @@ void int_handler_ahci()
 		ahci_device_desc = system.device_desc->dev;
 		ahci_device_desc->mem->is = 1;
 		unmask_entry(17);
-		ENABLE_PREEMPTION(get_current_process_context())
+		ENABLE_PREEMPTION(GET_CPU_INDEX)
 		//params[0] = 0;
 	    //params[1] = &system.device_desc->lock;
 		exit_int_handler(processor_reg, 0, NULL);                                                                                              
@@ -147,7 +147,7 @@ void int_handler_ahci()
 		static struct t_processor_reg _processor_reg;
 		_processor_reg = processor_reg;
 		unmask_entry(17);
-		ENABLE_PREEMPTION(get_current_process_context())
+		ENABLE_PREEMPTION(GET_CPU_INDEX)
 		
 		RESTORE_PROCESSOR_REG(_processor_reg)                                                                           
 		RET_FROM_INT_HANDLER 
@@ -222,7 +222,7 @@ static s8 _p_read_write_28_ahci(t_io_request* io_request)
 	
 	SPINLOCK_INIT(spinlock);
 	//Entrypoint mutual exclusion region.
-	SPINLOCK_LOCK(spinlock,get_current_process_context());
+	SPINLOCK_LOCK(spinlock,GET_CPU_INDEX);
 	device_desc = io_request->device_desc;
 	device_desc->status = DEVICE_BUSY || POOLING_MODE;
     port = ((t_ahci_device_desc*) device_desc->dev)->active_port;
@@ -250,7 +250,7 @@ static s8 _p_read_write_28_ahci(t_io_request* io_request)
 EXIT:
 	device_desc->status = DEVICE_IDLE;
 	//Exitpoint mutual exclusion region
-	SPINLOCK_UNLOCK(spinlock,get_current_process_context());
+	SPINLOCK_UNLOCK(spinlock,GET_CPU_INDEX);
 	return ret;
 }
 
@@ -277,6 +277,7 @@ static u8 _read_write_28_ahci(t_io_request* io_request)
 	//spinlock to avoid race with interrupt handler
 	//SPINLOCK_LOCK(device_desc->lock, get_current_process_context());
 	params[0] = 1;
+	process_context->proc_status=SLEEPING;
 	SUSPEND(params);
 	sem_up(&device_desc->mutex);
 	return ret;

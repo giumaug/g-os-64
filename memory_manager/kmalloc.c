@@ -58,7 +58,7 @@ void* _kmalloc(unsigned int mem_size)
 
 	SAVE_IF_STATUS
 	CLI
-	SPINLOCK_LOCK(mp_lock,get_current_process_context());
+	SPINLOCK_LOCK(mp_lock,GET_CPU_INDEX);
 	switch(mem_size)
 	{
 		case 0 ... 4:
@@ -147,7 +147,7 @@ void* _kmalloc(unsigned int mem_size)
 		}
 	}
 //	collect_mem_alloc(mem_add);
-    SPINLOCK_UNLOCK(mp_lock,get_current_process_context());
+    SPINLOCK_UNLOCK(mp_lock,GET_CPU_INDEX);
 	RESTORE_IF_STATUS
 	return mem_add;
 }
@@ -164,7 +164,7 @@ void* kmalloc(unsigned int mem_size)
 	//SPINLOCK_LOCK(mp_lock,get_current_process_context());
 	
 	//--------------------
-	int cpuIndex = get_current_process_context();
+	int cpuIndex = GET_CPU_INDEX;
 	asm("lock;incl %0;":"=m"(system.int_path_count[cpuIndex]):"m"(system.int_path_count[cpuIndex]):"memory");
 	asm ("_spin%=: mov $0x1,%%eax;xchg %%eax,%0;cmp $0,%%eax;jne _spin%=;":"+m"((mp_lock).status)::"%eax","memory");
 	//--------------------
@@ -186,7 +186,7 @@ void* kmalloc(unsigned int mem_size)
 //	{
 //		collect_mem_alloc(mem_add);
 //	}
-    SPINLOCK_UNLOCK(mp_lock,get_current_process_context());
+    SPINLOCK_UNLOCK(mp_lock,GET_CPU_INDEX);
 	RESTORE_IF_STATUS
 	return mem_add;
 }
@@ -199,7 +199,7 @@ void _kfree(void *address)
 
 	SAVE_IF_STATUS
 	CLI
-	SPINLOCK_LOCK(mp_lock,get_current_process_context());
+	SPINLOCK_LOCK(mp_lock,GET_CPU_INDEX);
 	pool_index=0;
 	pool_offset = address - VIRT_MEM_START_ADDR - POOL_START_ADDR;
 	
@@ -290,7 +290,7 @@ void _kfree(void *address)
 			panic();
 		}
 	}
-	SPINLOCK_UNLOCK(mp_lock,get_current_process_context());
+	SPINLOCK_UNLOCK(mp_lock,GET_CPU_INDEX);
 	RESTORE_IF_STATUS
 }
 
@@ -300,7 +300,7 @@ void kfree(void* address)
 
 	SAVE_IF_STATUS
 	CLI
-	SPINLOCK_LOCK(mp_lock,get_current_process_context());
+	SPINLOCK_LOCK(mp_lock,GET_CPU_INDEX);
 	pool_index=0;
 	
 	while ((pool_index + 1) * MEM_TO_POOL < (address - VIRT_MEM_START_ADDR + PHY_MEM_START_ADDR - POOL_START_ADDR))
@@ -315,7 +315,7 @@ void kfree(void* address)
 //	{
 //		collect_mem_free(address);
 //	}
-    SPINLOCK_UNLOCK(mp_lock,get_current_process_context());
+    SPINLOCK_UNLOCK(mp_lock,GET_CPU_INDEX);
 	RESTORE_IF_STATUS
 }
 

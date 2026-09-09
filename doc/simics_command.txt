@@ -136,25 +136,24 @@ bp.source_location.break panic
 @yyy=conf.rn0
 @yyy.rn.tx_bandwidth=0
 @yyy.rn.tx_packet_rate=0
-bp.source_location.break _read_write_28_ahci
-bp.source_location.break _exec
+bp.source_location.break kmain
+bp.source_location.break page_fault_handler
+bp.source_location.break int_handler_ahci
+bp.source_line.break filename = lapic.c line-number = 181
 
-bp.source_line.break filename = vm.c line-number = 587
-bp.source_line.break filename = lapic.c line-number = 235
-bp.source_line.break filename = lapic.c line-number = 237
+bp.source_location.break syscall_handler
 
 
-bp.source_location.break post_context_switch
-
---------
+---------------------------------
 bp.source_location.break _read_write
-bp.source_line.break filename = lapic.c line-number = 226
+bp.source_line.break filename = lapic.c line-number = 181
 
 set-bookmark sp
 skip-to sp
 
-add-symbol-file /home/peppe/Desktop/g-os-grub2/g-os-64/process/ht
-bp.source_line.break filename  = unistd.c line-number = 23
+add-symbol-file /home/peppe/Desktop/g-os-grub2/g-os-64/process/shell
+bp.source_line.break filename  = shell.c line-number = 25
+bp.source_line.break filename  = shell.c line-number = 66
 
 bp.source_location.break _exec
 board.mb.cpu0.log-level 4
@@ -163,10 +162,10 @@ log-setup logos.log
 board.mb.phys_mem.memory-map
 
 breakpoint su memoria fisica:
-board.mb.cpu0.mem[0][0].bp-break-memory address = 0x12fcc0 length = 8 -w
-board.mb.cpu0.mem[1][0].bp-break-memory address = 0xf026ddc8 length = 8 -w
-board.mb.cpu0.mem[2][0].bp-break-memory address = 0xf026ddc8 length = 8 -w
-board.mb.cpu0.mem[3][0].bp-break-memory address = 0xf026ddc8 length = 8 -w
+board.mb.cpu0.mem[0][0].bp-break-memory address = 0xf026db3c length = 8 -w
+board.mb.cpu0.mem[1][0].bp-break-memory address = 0xf026db3c length = 8 -w
+board.mb.cpu0.mem[2][0].bp-break-memory address = 0xf026db3c length = 8 -w
+board.mb.cpu0.mem[3][0].bp-break-memory address = 0xf026db3c length = 8 -w
 
 
 

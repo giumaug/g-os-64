@@ -234,7 +234,7 @@ void int_handler_i8254x()
 	SAVE_PROCESSOR_REG(processor_reg)             
 	i8254x = system.network_desc->dev;
 	mask_entry(16);
-	DISABLE_PREEMPTION(get_current_process_context())
+	DISABLE_PREEMPTION(GET_CPU_INDEX)
 	EOI_TO_LAPIC
 	STI
 
@@ -289,7 +289,7 @@ void int_handler_i8254x()
 	}
 exit:
 	unmask_entry(16);
-	ENABLE_PREEMPTION(get_current_process_context())
+	ENABLE_PREEMPTION(GET_CPU_INDEX)
 	CLI
 	system.flush_network = 1;
 	//EXIT_INT_HANDLER(0,processor_reg,NULL)

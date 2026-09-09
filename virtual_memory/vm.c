@@ -511,6 +511,7 @@ void page_fault_handler()
 			phy_page_addr = FROM_VIRT_TO_PHY(page_addr);
 			system.buddy_desc->count[BLOCK_INDEX(phy_page_addr)]++;
 			elf_loader_read(current_process_context->elf_desc, fault_addr, page_addr);
+			printk(".");
 		}
 		else if ((fault_code & 0x1) == PAGE_OUT_MEMORY && (CHECK_MEM_REG(fault_addr, current_process_context->heap_mem_reg) || CHECK_MEM_REG(fault_addr, current_process_context->ustack_mem_reg)))
 		{

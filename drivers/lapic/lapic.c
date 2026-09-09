@@ -3,6 +3,7 @@
 #include "idt.h" 
 #include "virtual_memory/vm.h"
 #include "drivers/lapic/lapic.h"
+#include "drivers/ioapic/ioapic.h"
 #include "drivers/pit/8253.h" 
 
 extern u64 *AP_GDT;
@@ -18,14 +19,16 @@ static u32 read_reg(u32 reg_offset);
 static void write_reg(u32 reg_offset, u32 val);
 static void set_timer_divisor(int divisor);
 
-static u8 lapic_inizialized = 0;
+volatile int cpu_inizialized __attribute__((aligned(4))) = 0;
+static u32 lapic_freq = 0;
 
 void init_lapic()
 {
 	u32 val;
 	u32 lapic_id;
-	
-    //map_vm_mem_static(LAPIC_BASE, PHY_LAPIC_BASE, PAGE_SIZE);
+	u32 count;
+	static struct t_i_desc i_desc;
+    
     map_vm_mem(system.master_page_pml4, LAPIC_BASE, PHY_LAPIC_BASE, PAGE_SIZE, 3);
 	init_pit();
 	// Clear Task Priority register; this enables all LAPIC interrupts
@@ -38,19 +41,31 @@ void init_lapic()
 	write_reg(LAPIC_SVR, val);
 	lapic_id = read_reg(LAPIC_ID);
 	STI
-	init_timer();
+	if (lapic_freq == 0)
+	{
+		init_timer();
+		i_desc.baseLow=(((u64)(&int_handler_lapic)) & 0xFFFF);
+		i_desc.selector=0x8;
+		i_desc.flags=0x08e00;
+		i_desc.baseHi=(((u64)(&int_handler_lapic)) >> 0x010);
+		i_desc.baseExt=(((u64)(&int_handler_lapic)) >> (u64)0x020);
+		i_desc.pad=0;
+		set_idt_entry(LAPIC_TMR_VECTOR, &i_desc);
+	}
+	count = lapic_freq / TICK_FRQ; //lapic_freq / count = TICK_FRQ
+	write_reg(LAPIC_TMR, LAPIC_TMR_PERIODIC | LAPIC_TMR_VECTOR);
+	write_reg(LAPIC_ICR, count);
 	CLI
 	free_pit();
-	lapic_inizialized = 1;
 }
 
 static void init_timer()
 {
-	static struct t_i_desc i_desc;
+	//static struct t_i_desc i_desc;
 	t_timer* timer = NULL;
-	u32 lapic_freq;
+	//u32 lapic_freq;
 	u32 max_timer_count = 0xffffffff;
-	u32 count;
+	//u32 count;
 	u32 divisor;
 	
 	timer = timer_init(0, NULL, NULL, NULL);
@@ -72,17 +87,16 @@ static void init_timer()
 		panic();
 	}
 
-	i_desc.baseLow=(((u64)(&int_handler_lapic)) & 0xFFFF);
-	i_desc.selector=0x8;
-	i_desc.flags=0x08e00;
-	i_desc.baseHi=(((u64)(&int_handler_lapic)) >> 0x010);
-	i_desc.baseExt=(((u64)(&int_handler_lapic)) >> (u64)0x020);
-	i_desc.pad=0;		
-	set_idt_entry(0x38, &i_desc);
-	
-	count = lapic_freq / TICK_FRQ; //lapic_freq / count = TICK_FRQ
-	write_reg(LAPIC_TMR, LAPIC_TMR_PERIODIC | LAPIC_TMR_VECTOR);
-	write_reg(LAPIC_ICR, count);
+	//i_desc.baseLow=(((u64)(&int_handler_lapic)) & 0xFFFF);
+	//i_desc.selector=0x8;
+	//i_desc.flags=0x08e00;
+	//i_desc.baseHi=(((u64)(&int_handler_lapic)) >> 0x010);
+	//i_desc.baseExt=(((u64)(&int_handler_lapic)) >> (u64)0x020);
+	//i_desc.pad=0;
+	//set_idt_entry(LAPIC_TMR_VECTOR, &i_desc);
+	//count = lapic_freq / TICK_FRQ; //lapic_freq / count = TICK_FRQ
+	//write_reg(LAPIC_TMR, LAPIC_TMR_PERIODIC | LAPIC_TMR_VECTOR);
+	//write_reg(LAPIC_ICR, count);
 }
 
 static void set_timer_divisor(int divisor)
@@ -161,7 +175,7 @@ void int_handler_lapic()
 	EOI_TO_LAPIC
 	//SWITCH_DS_TO_KERNEL_MODE
 	
-	cpuId = get_current_process_context();
+	cpuId = GET_CPU_INDEX;
 	if (cpuId == CPU_0)
 	{
 	  system.time += QUANTUM_DURATION;
@@ -214,7 +228,7 @@ void int_handler_lapic()
 	}
 	else
 	{	
-		process_context = system.process_info->current_process[get_current_process_context()]->val;
+		process_context = system.process_info->current_process[GET_CPU_INDEX]->val;
 		process_context->sleep_time -= QUANTUM_DURATION;
 		if (process_context->sleep_time > 1000) 	
 		{
@@ -268,6 +282,11 @@ void ap_init()
 	u8* gdt_tss = &AP_TSS;
 	u64 cpu_gdt[NUM_CPU - 1];
 	u8* cpu_gtd_desc = &AP_GDT_DESC;
+	
+	for (i = 0; i < NUM_CPU; i++)
+	{
+		system.cpu_index[i] = i;
+	}
 	
 	for (i = 0; i < NUM_CPU - 1; i++)
 	{
@@ -343,8 +362,10 @@ void ap_init()
 		*((u16*)(cpu_gtd_desc + (16 * i))) = 55;
 		*((u64*)(cpu_gtd_desc + (16 * i) + 2)) = gdt_mem + (56 * i);
 	}
-	//stack setup
-	//kernel_stack_addr = buddy_alloc_page(system.buddy_desc,KERNEL_STACK_SIZE);
+	
+	u64 base = (u64) &system.cpu_index[0];
+	set_gs_base(base);
+	__atomic_fetch_add(&cpu_inizialized, 1, 5);
 	
 	*((volatile u32*)(LAPIC_BASE + 0x280)) = 0;
 	*((volatile u32*)(LAPIC_BASE + 0x310)) = (*((volatile u32*)(LAPIC_BASE + 0x310))) & 0xFFFFFF;
@@ -357,6 +378,24 @@ void ap_init()
 	do { __asm__ __volatile__ ("pause" : : : "memory"); }while(*((volatile u32*)(LAPIC_BASE + 0x300)) & (1 << 12));
 }
 
+inline void set_gs_base(u64 base) {
+    u32 lo = (u32)(base & 0xFFFFFFFF);
+    u32 hi = (u32)(base >> 32);
+    asm volatile (
+        "wrmsr"
+        :
+        : "c"(0xC0000101), "a"(lo), "d"(hi)
+        : "memory"
+    );
+}
+
+
+//u8 get_current_process_context()
+//{
+//	return GET_CPU_INDEX;
+//}
+
+/*
 u8 get_current_process_context()
 {
 	u8 id;
@@ -532,22 +571,25 @@ u8 get_current_process_context()
 	}
 	return mapId;
 }
+*/
 
 void relocate_init_code()
 {
 	kmemcpy(AP_TRAMPOLINE_DST_ADDR, AP_TRAMPOLINE_SRC_ADDR, AP_TRAMPOLINE_SIZE);
 }
 
-void ap_post_init(int cpuId)
+void ap_post_init(int cpu_id)
 {
   static unsigned int params[1];
   static struct t_process_context* process_context = NULL;
   static u64 kernel_stack;
-  static int _cpuId;
+  static char _cpu_id;
     
-  _cpuId = cpuId;
+  _cpu_id = cpu_id;              
+  u64 base = (u64) &system.cpu_index[_cpu_id];
+  set_gs_base(base);
+  
   process_context = kmalloc(sizeof(struct t_process_context));
-  u64 xxx = buddy_alloc_page(system.buddy_desc,KERNEL_STACK_SIZE);
   process_context->phy_kernel_stack = FROM_VIRT_TO_PHY(buddy_alloc_page(system.buddy_desc,KERNEL_STACK_SIZE));
   init_vm_process(process_context);
   
@@ -555,8 +597,11 @@ void ap_post_init(int cpuId)
   asm volatile ("mov %0,%%rbp;"::"r"(kernel_stack));
   asm volatile ("mov %0,%%rsp;"::"r"(kernel_stack));
   
-  buddy_free_page(system.buddy_desc, tmp_phy_kernel_stack[_cpuId - 1]);
-  system.process_info->current_process[_cpuId] = ll_prepend(system.scheduler_desc[_cpuId]->scheduler_queue[9],process_context);
+  buddy_free_page(system.buddy_desc, tmp_phy_kernel_stack[_cpu_id - 1]);
+  system.process_info->current_process[_cpu_id] = ll_prepend(system.scheduler_desc[_cpu_id]->scheduler_queue[9],process_context);
+  
+  __atomic_fetch_add(&cpu_inizialized, 1, 5);
+  init_lapic(); 
   
   params[0]=0;       
   SYSCALL(13L,params);

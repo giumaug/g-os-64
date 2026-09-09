@@ -57,9 +57,12 @@ typedef struct s_system
 	t_hashtable* mount_map;
 	//trick to use second device
 	u8 device_id;
+	u8 cpu_index[NUM_CPU];
  }
 t_system;
 
 extern t_system system;
+
+#define GET_CPU_INDEX (*(__seg_gs char *)0)
 
 #endif
