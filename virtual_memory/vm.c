@@ -491,6 +491,7 @@ void page_fault_handler()
 	u64 pt_num;
 	u64 phy_fault_addr;
 	u64 phy_page_addr;
+	int cpu_id;
 	
 	SAVE_PROCESSOR_REG(processor_reg)
 	SWITCH_SS_TO_KERNEL_MODE
@@ -511,6 +512,8 @@ void page_fault_handler()
 			phy_page_addr = FROM_VIRT_TO_PHY(page_addr);
 			system.buddy_desc->count[BLOCK_INDEX(phy_page_addr)]++;
 			elf_loader_read(current_process_context->elf_desc, fault_addr, page_addr);
+			cpu_id = GET_CPU_INDEX;
+			if (cpu_id == 0) cpu_id = 0; 
 			printk(".");
 		}
 		else if ((fault_code & 0x1) == PAGE_OUT_MEMORY && (CHECK_MEM_REG(fault_addr, current_process_context->heap_mem_reg) || CHECK_MEM_REG(fault_addr, current_process_context->ustack_mem_reg)))
@@ -559,17 +562,13 @@ void page_fault_handler()
 	}
 	else
 	{
-		//printk("\n +++Segmentation fault. \n");
 		panic();
-		//_exit(0);
-		//on_exit_action=2;
 		on_exit_action = 0;
 		page_addr=buddy_alloc_page(system.buddy_desc,PAGE_SIZE);
 		map_vm_mem(current_process_context->page_pml4,aligned_fault_addr,FROM_VIRT_TO_PHY(page_addr),PAGE_SIZE,7);
 	}
 
 	SWITCH_PAGE_DIR(FROM_VIRT_TO_PHY((current_process_context->page_pml4))) 	
-//	EXIT_INT_HANDLER(on_exit_action,processor_reg)
     exit_int_handler(processor_reg, -1, NULL);
 } 
 

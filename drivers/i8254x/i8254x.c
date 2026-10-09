@@ -289,10 +289,9 @@ void int_handler_i8254x()
 	}
 exit:
 	unmask_entry(16);
-	ENABLE_PREEMPTION(GET_CPU_INDEX)
 	CLI
+	ENABLE_PREEMPTION(GET_CPU_INDEX)
 	system.flush_network = 1;
-	//EXIT_INT_HANDLER(0,processor_reg,NULL)
 	exit_int_handler(processor_reg, 0, NULL);
 }
 

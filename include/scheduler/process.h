@@ -103,6 +103,7 @@ struct t_process_context
 	u32 icmp_pending_req;
 	t_llist_node* sleep_wait_queue_ref;
 	t_llist_node* pgid_list_ref;
+	u8 cpu_id;
 };
 
 //current_process, tss, current_processor array/lapic association are determined by protocol. 8-bit lapic is is split in package,

@@ -46,6 +46,7 @@ void init_scheduler();
 void sched_debug();
 void adjust_sched_queue(struct t_process_context *current_process_context);
 void _awake(struct t_process_context *new_process);
+void _awake_on_cpu(struct t_process_context *new_process, u8 cpu_id);
 void _pause();
 void _exit(int status);
 u32 _exec(char* path,char* argv[]);

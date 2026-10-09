@@ -52,12 +52,13 @@ typedef struct s_system
 	struct s_network_desc* network_desc;
 	unsigned int panic;
 	t_llist* timer_list;
-	u8 force_scheduling;
+	u8 force_scheduling[NUM_CPU];
 	u8 flush_network;
 	t_hashtable* mount_map;
 	//trick to use second device
 	u8 device_id;
 	u8 cpu_index[NUM_CPU];
+	t_hashtable* lapic_id_map;
  }
 t_system;
 

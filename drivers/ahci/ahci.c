@@ -5,6 +5,8 @@
 static void port_init(t_ahci_device_desc* device_desc_ahci, u8 port_num);
 static void port_free(t_hba_port* port, t_hashtable* mem_map);
 static int check_type(t_hba_port* port);
+static void int_handler_ahci();
+static void int_handler_ipi_ahci();
 
 static t_ahci_device_desc _device_desc_ahci;
 //required internal memory: 2048 + 512 + 512 * 32
@@ -42,7 +44,8 @@ t_ahci_device_desc* init_ahci(t_device_desc* device_desc)
     t_hba_port* port = NULL;
     t_hba_mem* mem = NULL;
     t_ahci_device_desc* device_desc_ahci = NULL;
-    struct t_i_desc i_desc;
+    struct t_i_desc i_ahci_desc;
+    struct t_i_desc i_ipi_ahci_desc;
     
     //device_desc_ahci = kmalloc(sizeof(t_ahci_device_desc));
     device_desc_ahci = &_device_desc_ahci;
@@ -67,13 +70,22 @@ t_ahci_device_desc* init_ahci(t_device_desc* device_desc)
     device_desc_ahci->active_port = &(device_desc_ahci->mem->ports[0]);
     port_init(device_desc_ahci, 0);
     
-	i_desc.baseLow=(((u64)(&int_handler_ahci)) & 0xFFFF);
-	i_desc.selector=0x8;
-	i_desc.flags=0x08e00;
-	i_desc.baseHi=(((u64)(&int_handler_ahci)) >> 0x010);
-	i_desc.baseExt=(((u64)(&int_handler_ahci)) >> (u64)0x020);
-	i_desc.pad=0;	
-	set_idt_entry(0x31, &i_desc);
+	i_ahci_desc.baseLow=(((u64)(&int_handler_ahci)) & 0xFFFF);
+	i_ahci_desc.selector=0x8;
+	i_ahci_desc.flags=0x08e00;
+	i_ahci_desc.baseHi=(((u64)(&int_handler_ahci)) >> 0x010);
+	i_ahci_desc.baseExt=(((u64)(&int_handler_ahci)) >> (u64)0x020);
+	i_ahci_desc.pad=0;	
+	set_idt_entry(0x31, &i_ahci_desc);
+	
+	i_ipi_ahci_desc.baseLow=(((u64)(&int_handler_ipi_ahci)) & 0xFFFF);
+	i_ipi_ahci_desc.selector=0x8;
+	i_ipi_ahci_desc.flags=0x08e00;
+	i_ipi_ahci_desc.baseHi=(((u64)(&int_handler_ipi_ahci)) >> 0x010);
+	i_ipi_ahci_desc.baseExt=(((u64)(&int_handler_ipi_ahci)) >> (u64)0x020);
+	i_ipi_ahci_desc.pad=0;	
+	//0x39 first available slot afert ioapic lines.
+	set_idt_entry(0x39, &i_ipi_ahci_desc);
 	
 	device_desc->dev = device_desc_ahci;
 	device_desc->read_dma = _read_28_ahci;
@@ -94,7 +106,40 @@ void free_ahci(t_ahci_device_desc* device_desc)
     kfree(device_desc);
 }
 
-void int_handler_ahci()
+static void int_handler_ahci()
+{
+	struct t_processor_reg processor_reg;
+	t_ahci_device_desc* ahci_device_desc = NULL;
+	t_io_request* io_request = NULL;
+	t_hba_port* port = NULL;
+	u8 lapic_id;
+	u8 cpu_id;
+	u8 vector_id;
+	
+	SAVE_PROCESSOR_REG(processor_reg)
+	DISABLE_PREEMPTION(GET_CPU_INDEX)
+	EOI_TO_LAPIC
+	io_request = system.device_desc->serving_request;
+	if (io_request != NULL) 
+	{
+		cpu_id = io_request->cpu_id;
+		lapic_id = hashtable_get(system.lapic_id_map, cpu_id);
+		send_ipi(lapic_id, 0x39);
+	}
+	else
+	{
+		port = ((t_ahci_device_desc*) system.device_desc->dev)->active_port;
+		port->is = 1;
+		ahci_device_desc = system.device_desc->dev;
+		ahci_device_desc->mem->is = 1;
+	}
+	CLI
+	ENABLE_PREEMPTION(GET_CPU_INDEX)
+	RESTORE_PROCESSOR_REG(processor_reg)                                                                           
+	RET_FROM_INT_HANDLER
+}
+
+static void int_handler_ipi_ahci()
 {	
 	struct t_processor_reg processor_reg;
 	t_io_request* io_request = NULL;
@@ -115,17 +160,16 @@ void int_handler_ahci()
 	//Could there be spurious interrupts
 	if (io_request != NULL)
 	{
-		//SPINLOCK_LOCK(system.device_desc->lock, get_current_process_context());
 		process_context = io_request->process_context;
 		if (system.device_desc->status == DEVICE_BUSY)
 		{
 			system.device_desc->status == DEVICE_IDLE;
 			system.device_desc->serving_request = NULL;
-			_awake(process_context);
+			_awake_on_cpu(process_context, GET_CPU_INDEX);
 		}
 		if (current_process_context->pid != process_context->pid) 
 		{
-			system.force_scheduling = 1;
+			system.force_scheduling[GET_CPU_INDEX] = 1;
 		}
 		port = ((t_ahci_device_desc*) system.device_desc->dev)->active_port;
 		port->is = 1;
@@ -133,8 +177,6 @@ void int_handler_ahci()
 		ahci_device_desc->mem->is = 1;
 		unmask_entry(17);
 		ENABLE_PREEMPTION(GET_CPU_INDEX)
-		//params[0] = 0;
-	    //params[1] = &system.device_desc->lock;
 		exit_int_handler(processor_reg, 0, NULL);                                                                                              
 	}
 	else
@@ -144,12 +186,12 @@ void int_handler_ahci()
 		ahci_device_desc = system.device_desc->dev;
 		ahci_device_desc->mem->is = 1;
 		
-		static struct t_processor_reg _processor_reg;
-		_processor_reg = processor_reg;
+		//static struct t_processor_reg _processor_reg;
+		//_processor_reg = processor_reg;
 		unmask_entry(17);
 		ENABLE_PREEMPTION(GET_CPU_INDEX)
 		
-		RESTORE_PROCESSOR_REG(_processor_reg)                                                                           
+		RESTORE_PROCESSOR_REG(processor_reg)                                                                           
 		RET_FROM_INT_HANDLER 
 	}
 }

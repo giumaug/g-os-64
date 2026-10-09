@@ -46,12 +46,12 @@ void kmain(multiboot_info_t* mbd, u64 magic)
 	system.time = 0;
 	system.flush_network = 0;
  	CLI
-	system.force_scheduling = 0;
 	system.process_info = &process_info;
 	
 	for (i = 0; i < NUM_CPU; i++)
 	{
 		system.int_path_count[i] = 0;
+		system.force_scheduling[i] = 0;
 	}
 	
 	//system.scheduler_desc->scheduler_queue[0] = 0;
@@ -65,6 +65,7 @@ void kmain(multiboot_info_t* mbd, u64 magic)
 	init_kmallocs();
 	system.buddy_desc = buddy_init();
 	init_scheduler();
+	system.lapic_id_map = hashtable_init(NUM_CPU);
 	for (i = 0; i < NUM_CPU; i++)
 	{
 	  system.process_info->pause_queue[i] = new_dllist();

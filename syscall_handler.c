@@ -278,5 +278,4 @@ void syscall_handler()
 		system.flush_network = 1;
 	}
 	exit_int_handler(processor_reg, on_exit_action, params);
-    //EXIT_INT_HANDLER(on_exit_action,processor_reg, post_handler.exec)
 }

@@ -195,7 +195,6 @@ t_ahci_device_desc;
 
 t_ahci_device_desc* init_ahci(t_device_desc* device_desc);
 void free_ahci(t_ahci_device_desc* device_desc);
-void int_handler_ahci();
 u8 _write_28_ahci(t_io_request* io_request);
 u8 _read_28_ahci(t_io_request* io_request);
 u8 _read_28_ahci(t_io_request* io_request);

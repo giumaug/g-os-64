@@ -378,8 +378,7 @@ void int_handler_kbc()
 	}
 	unmask_entry(1);
 	ENABLE_PREEMPTION(GET_CPU_INDEX);
-	exit_int_handler(processor_reg, 0, NULL);
-	//EXIT_INT_HANDLER(0,processor_reg,NULL)                                                                              
+	exit_int_handler(processor_reg, 0, NULL);                                                                              
 }
 
 char read_buf()

@@ -249,25 +249,33 @@ void _sleep_and_unlock(t_spinlock_desc* lock)
 	//RESTORE_IF_STATUS
 }
 
+//DA VALUTARE SE CAMBIARE SIGNATURE DELLA FUNZIONE
 void _awake(struct t_process_context *new_process)
+{
+	_awake_on_cpu(new_process, 255);
+}
+
+void _awake_on_cpu(struct t_process_context *new_process, u8 cpu_id)
 {
 	t_llist_node* new_node;
 	struct t_process_context* process_context;
-	int cpuId;
 
 	SAVE_IF_STATUS
 	CLI
 	CURRENT_PROCESS_CONTEXT(process_context);
-	cpuId = GET_CPU_INDEX;
+	if (cpu_id == 255)
+	{
+		cpu_id = GET_CPU_INDEX;
+	}
 	new_process->sleep_time=(system.time-new_process->sleep_time>=1000) ? 1000 : (system.time-new_process->sleep_time);
 	adjust_sched_queue(new_process);
 	//COULD ARRIVE AN ATA INTERRUPT DURING NETWORK FLUSH
 	if (process_context->pid != new_process->pid && new_process->proc_status == SLEEPING)
 	{
-		ll_prepend(system.scheduler_desc[cpuId]->scheduler_queue[new_process->curr_sched_queue_index],new_process);
+		ll_prepend(system.scheduler_desc[cpu_id]->scheduler_queue[new_process->curr_sched_queue_index],new_process);
 	}
 	new_process->proc_status=RUNNING;
-	system.force_scheduling = 1;
+	system.force_scheduling[cpu_id] = 1;
 	RESTORE_IF_STATUS
 }
 
@@ -389,7 +397,7 @@ int _fork(struct t_processor_reg processor_reg)
 	t_hashtable* child_socket_desc = NULL;
 	char* kernel_stack_addr = NULL;
 	t_elf_desc* child_elf_desc = NULL;
-	int cpuId;
+	int cpu_id;
 
 	child_process_context = kmalloc(sizeof(struct t_process_context));
 	SAVE_IF_STATUS
@@ -435,8 +443,9 @@ int _fork(struct t_processor_reg processor_reg)
 		child_process_context->ustack_mem_reg = create_mem_reg(parent_process_context->ustack_mem_reg->start_addr,
 								     parent_process_context->ustack_mem_reg->end_addr);	
 	}
-	cpuId = selectCpu();
-	ll_prepend(system.scheduler_desc[cpuId]->scheduler_queue[parent_process_context->curr_sched_queue_index],child_process_context);
+	cpu_id = selectCpu();
+	child_process_context->cpu_id = cpu_id;
+	ll_prepend(system.scheduler_desc[cpu_id]->scheduler_queue[parent_process_context->curr_sched_queue_index],child_process_context);
 	child_process_context->page_pml4 = clone_vm_process(parent_process_context->page_pml4,
 							 parent_process_context->process_type,
 							 FROM_VIRT_TO_PHY(kernel_stack_addr));

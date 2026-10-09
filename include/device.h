@@ -18,6 +18,7 @@ typedef struct s_io_request
 	void* io_buffer;
 	struct t_process_context* process_context;
 	unsigned int command;
+	u8 cpu_id;
 }
 t_io_request;
 

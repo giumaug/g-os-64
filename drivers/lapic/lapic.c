@@ -21,6 +21,7 @@ static void set_timer_divisor(int divisor);
 
 volatile int cpu_inizialized __attribute__((aligned(4))) = 0;
 static u32 lapic_freq = 0;
+static t_spinlock_desc ap_lock;
 
 void init_lapic()
 {
@@ -176,6 +177,13 @@ void int_handler_lapic()
 	//SWITCH_DS_TO_KERNEL_MODE
 	
 	cpuId = GET_CPU_INDEX;
+	
+	if (cpuId == 1)
+	{
+		cpuId =1;	
+	}
+	
+	
 	if (cpuId == CPU_0)
 	{
 	  system.time += QUANTUM_DURATION;
@@ -271,7 +279,6 @@ EXIT_HANDLER:;
 		node = ll_next(node);
 	}
 	while(node != ll_first(system.timer_list));
-//---	EXIT_INT_HANDLER(is_schedule,processor_reg,NULL);
     exit_int_handler(processor_reg, is_schedule, NULL);                                              
 }
 
@@ -363,6 +370,7 @@ void ap_init()
 		*((u64*)(cpu_gtd_desc + (16 * i) + 2)) = gdt_mem + (56 * i);
 	}
 	
+	SPINLOCK_INIT(ap_lock);
 	u64 base = (u64) &system.cpu_index[0];
 	set_gs_base(base);
 	__atomic_fetch_add(&cpu_inizialized, 1, 5);
@@ -583,9 +591,11 @@ void ap_post_init(int cpu_id)
   static unsigned int params[1];
   static struct t_process_context* process_context = NULL;
   static u64 kernel_stack;
-  static char _cpu_id;
-    
-  _cpu_id = cpu_id;              
+  static u8 _cpu_id;
+  static u8 lapic_id;
+  
+  SPINLOCK_LOCK(ap_lock, cpu_id);
+  _cpu_id = cpu_id;            
   u64 base = (u64) &system.cpu_index[_cpu_id];
   set_gs_base(base);
   
@@ -601,10 +611,21 @@ void ap_post_init(int cpu_id)
   system.process_info->current_process[_cpu_id] = ll_prepend(system.scheduler_desc[_cpu_id]->scheduler_queue[9],process_context);
   
   __atomic_fetch_add(&cpu_inizialized, 1, 5);
-  init_lapic(); 
+  init_lapic();
+  lapic_id = read_reg(LAPIC_ID);
+  hashtable_put(system.lapic_id_map, _cpu_id, lapic_id);
+  SPINLOCK_UNLOCK(ap_lock, _cpu_id);
   
   params[0]=0;       
   SYSCALL(13L,params);
+}
+
+void send_ipi(u8 apic_id, u8 vector_id)
+{
+	*((volatile u32*)(LAPIC_BASE + 0x280)) = 0;
+	*((volatile u32*)(LAPIC_BASE + 0x310)) = (*((volatile u32*)(LAPIC_BASE + 0x310))) & 0xFFFFFF | (apic_id << 24);
+	*((volatile u32*)(LAPIC_BASE + 0x300)) = 0x4000 | vector_id;
+	do { __asm__ __volatile__ ("pause" : : : "memory"); }while(*((volatile u32*)(LAPIC_BASE + 0x300)) & (1 << 12));
 }
 	
 

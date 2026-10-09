@@ -970,18 +970,23 @@ void set_idt_entry(int entry,struct t_i_desc* i_desc)
 	idt[entry]=*i_desc;
 }
 
-void post_context_switch()
+void post_context_switch(u8 cpu_id)
 {
-	int cpuIndex;
+	//int cpuIndex;
 	struct t_processor_reg processor_reg;
 	
-	cpuIndex = GET_CPU_INDEX;
-	processor_reg = system.process_info->context_switch_data.processor_reg[cpuIndex];
-	if (system.process_info->context_switch_data.action[cpuIndex] == 2)                                                                                        
+	if (cpu_id > 4)
+	{
+		panic();
+	}
+	
+	//cpuIndex = GET_CPU_INDEX;
+	processor_reg = system.process_info->context_switch_data.processor_reg[cpu_id];
+	if (system.process_info->context_switch_data.action[cpu_id] == 2)                                                                                        
 	{                                                                                                       
-		DO_STACK_FRAME(system.process_info->context_switch_data.processor_reg[cpuIndex].rsp-8);                                                           
-		free_vm_process(&system.process_info->context_switch_data.old_process_context[cpuIndex]);                                                         
-		buddy_free_page(system.buddy_desc,FROM_PHY_TO_VIRT(system.process_info->context_switch_data.old_process_context[cpuIndex].phy_kernel_stack));     
+		DO_STACK_FRAME(system.process_info->context_switch_data.processor_reg[cpu_id].rsp-8);                                                           
+		free_vm_process(&system.process_info->context_switch_data.old_process_context[cpu_id]);                                                         
+		buddy_free_page(system.buddy_desc,FROM_PHY_TO_VIRT(system.process_info->context_switch_data.old_process_context[cpu_id].phy_kernel_stack));     
 	}                                                                                                
 	RESTORE_PROCESSOR_REG(processor_reg)                                                                          
 	EXIT_SYSCALL_HANDLER       
@@ -989,52 +994,51 @@ void post_context_switch()
 
 void exit_int_handler(struct t_processor_reg processor_reg, int on_exit_action, u64* params)
 {
-	u8 stop = 0; 
-	int cpuIndex;
+	u8 stop = 0;
 	struct t_processor_reg _processor_reg;
 	
 	CLI
 	_processor_reg = processor_reg;        
-	cpuIndex = GET_CPU_INDEX;                                                                                                
-	if (system.int_path_count == 0 && system.force_scheduling == 0 && system.flush_network == 1)                    
+	//cpuIndex = GET_CPU_INDEX;                                                                                                
+	if (system.int_path_count[GET_CPU_INDEX] == 0 && system.force_scheduling[GET_CPU_INDEX] == 0 && system.flush_network == 1)                    
 	{                                                                                                               
         system.flush_network = 0;                                                                       
 		dequeue_packet(system.network_desc);                                                            
 		equeue_packet(system.network_desc);                                                             
 		system.flush_network = 1;                                                                       
 	}                                                                                                               
-	system.process_info->context_switch_data.action[cpuIndex] = on_exit_action;                                                                                                  
-	system.process_info->context_switch_data.old_process_context[cpuIndex] =* (struct t_process_context*)system.process_info->current_process[cpuIndex]->val;                                                                            
-	system.process_info->context_switch_data.processor_reg[cpuIndex] = processor_reg;                                                                                   
-	if (system.force_scheduling == 1 && 0 == 0 && system.int_path_count == 0) ->qui!!!!!!!!                         
+	system.process_info->context_switch_data.action[GET_CPU_INDEX] = on_exit_action;                                                                                                  
+	system.process_info->context_switch_data.old_process_context[GET_CPU_INDEX] =* (struct t_process_context*)system.process_info->current_process[GET_CPU_INDEX]->val;                                                                            
+	system.process_info->context_switch_data.processor_reg[GET_CPU_INDEX] = processor_reg;                                                                                   
+	if (system.force_scheduling[GET_CPU_INDEX] == 1 && 0 == 0 && system.int_path_count[GET_CPU_INDEX] == 0)                   
 	{                                                                                                               
-		system.process_info->context_switch_data.action[cpuIndex] = 1;                                                                                           
-		if (system.process_info->context_switch_data.old_process_context[cpuIndex].proc_status == EXITING)                                                    
+		system.process_info->context_switch_data.action[GET_CPU_INDEX] = 1;                                                                                           
+		if (system.process_info->context_switch_data.old_process_context[GET_CPU_INDEX].proc_status == EXITING)                                                    
 		{                                                                                                       
-			system.process_info->context_switch_data.action[cpuIndex] = 2;                                                                                   
+			system.process_info->context_switch_data.action[GET_CPU_INDEX] = 2;                                                                                   
 		}                                                                                                       
 	}                                                                                                                                                                                                                          
-	if (system.process_info->context_switch_data.action[cpuIndex] > 0)                                                                                                 
-	{	system.force_scheduling = 0;
+	if (system.process_info->context_switch_data.action[GET_CPU_INDEX] > 0)                                                                                                 
+	{	system.force_scheduling[GET_CPU_INDEX] = 0;
 		stop = 0;                                                                            
 		while(!stop)                                                                                             
 		{                                                                                                       
-			schedule(&system.process_info->context_switch_data.old_process_context[cpuIndex], &_processor_reg);                                            
-			system.process_info->context_switch_data.new_process_context[cpuIndex] = *(struct t_process_context*) system.process_info->current_process[cpuIndex]->val;
-			if (system.process_info->context_switch_data.new_process_context[cpuIndex].sig_num == SIGINT)                                                    
+			schedule(&system.process_info->context_switch_data.old_process_context[GET_CPU_INDEX], &_processor_reg);                                            
+			system.process_info->context_switch_data.new_process_context[GET_CPU_INDEX] = *(struct t_process_context*) system.process_info->current_process[GET_CPU_INDEX]->val;
+			if (system.process_info->context_switch_data.new_process_context[GET_CPU_INDEX].sig_num == SIGINT)                                                    
 			{                                                                                            
 				_exit(0);
-				free_vm_process(&system.process_info->context_switch_data.new_process_context[cpuIndex]);                                                         
-				buddy_free_page(system.buddy_desc,FROM_PHY_TO_VIRT(system.process_info->context_switch_data.new_process_context[cpuIndex].phy_kernel_stack));           
+				free_vm_process(&system.process_info->context_switch_data.new_process_context[GET_CPU_INDEX]);                                                         
+				buddy_free_page(system.buddy_desc,FROM_PHY_TO_VIRT(system.process_info->context_switch_data.new_process_context[GET_CPU_INDEX].phy_kernel_stack));           
 			}                                                                                               
 			else                                                                                            
 			{                                                                                               
 				stop = 1;                                                                               
 			}                                                                                               
 		}     
-		if (system.process_info->context_switch_data.new_process_context[cpuIndex].pid != system.process_info->context_switch_data.old_process_context[cpuIndex].pid)                                               
+		if (system.process_info->context_switch_data.new_process_context[GET_CPU_INDEX].pid != system.process_info->context_switch_data.old_process_context[GET_CPU_INDEX].pid)                                               
 		{          
-			system.process_info->context_switch_data.processor_reg[cpuIndex] = system.process_info->context_switch_data.new_process_context[cpuIndex].processor_reg;                                                                                                                  
+			system.process_info->context_switch_data.processor_reg[GET_CPU_INDEX] = system.process_info->context_switch_data.new_process_context[GET_CPU_INDEX].processor_reg;                                                                                                                  
 		}
 		if (params != NULL)
 		{
@@ -1043,27 +1047,27 @@ void exit_int_handler(struct t_processor_reg processor_reg, int on_exit_action, 
 				t_spinlock_desc* lock = params[0];
 				if (lock != NULL)
 				{
-					SPINLOCK_UNLOCK(*lock,cpuIndex);
+					SPINLOCK_UNLOCK(*lock,GET_CPU_INDEX);
 				}
-				ENABLE_PREEMPTION(cpuIndex)
+				ENABLE_PREEMPTION(GET_CPU_INDEX)
 			}
 			else if (params[0] == 1)
 			{
 				unmask_entry(17);
 			}
 		}                                                                                                      
-		SWITCH_PAGE_DIR(FROM_VIRT_TO_PHY(system.process_info->context_switch_data.new_process_context[cpuIndex].page_pml4))                       
+		SWITCH_PAGE_DIR(FROM_VIRT_TO_PHY(system.process_info->context_switch_data.new_process_context[GET_CPU_INDEX].page_pml4))                       
 		DO_STACK_FRAME(system.process_info->context_switch_data.processor_reg[GET_CPU_INDEX].rsp-8);
-		post_context_switch();                                                                                                                                                                    
+		post_context_switch(GET_CPU_INDEX);                                                                                                                                                             
 	}                                                                                                          	
-	else if (system.process_info->context_switch_data.action[cpuIndex] == 0)                                                                                              	
+	else if (system.process_info->context_switch_data.action[GET_CPU_INDEX] == 0)                                                                                              	
 	{                                                                                                               
-		RESTORE_PROCESSOR_REG(system.process_info->context_switch_data.processor_reg[cpuIndex])                                                                         
+		RESTORE_PROCESSOR_REG(system.process_info->context_switch_data.processor_reg[GET_CPU_INDEX])                                                                         
 		EXIT_SYSCALL_HANDLER                                                                                 
 	}
 	else
 	{
-		RESTORE_PROCESSOR_REG(system.process_info->context_switch_data.processor_reg[cpuIndex])                                                                         
+		RESTORE_PROCESSOR_REG(system.process_info->context_switch_data.processor_reg[GET_CPU_INDEX])                                                                         
 		RET_FROM_INT_HANDLER_FLUSH
 	}
 }
